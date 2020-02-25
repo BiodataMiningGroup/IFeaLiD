@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 |
 */
 
-// Route::middleware('auth:api')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
+Route::resource('datasets', 'DatasetController', [
+    // TODO validate UUID
+    'only' => ['store'],
+]);

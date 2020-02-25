@@ -11,6 +11,19 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [
+    'as' => 'home',
+    'uses' => 'DatasetController@create',
+]);
+
+Route::get('/edit/{slug}', [
+    'as' => 'edit',
+    'uses' => 'DatasetController@edit',
+    'where' => ['slug' => '[0-9A-Za-z]{10}'],
+]);
+
+Route::get('/show/{slug}', [
+    'as' => 'show',
+    'uses' => 'DatasetController@show',
+    'where' => ['slug' => '[0-9A-Za-z]{10}'],
+]);

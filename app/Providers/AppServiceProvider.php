@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Str;
+use App\Dataset;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        Dataset::creating(function ($dataset) {
+            $dataset->id = Str::uuid()->toString();
+            $dataset->public_slug = Str::random(10);
+            $dataset->secret_slug = Str::random(10);
+        });
     }
 }
