@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Storage;
+use Honeypot;
 use App\Dataset;
 use Tests\TestCase;
 use Illuminate\Http\UploadedFile;
@@ -22,18 +23,32 @@ class DatasetControllerTest extends TestCase
         $this->get('/')->assertStatus(200);
     }
 
-    public function testStore()
+    public function testStoreHoneypot()
     {
         $local = Storage::fake('local');
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
 
         $file = $this->getFile('dataset.zip');
-        $response = $this->post("/api/datasets", ['file' => $file]);
+        $this->postJson("/api/datasets", ['file' => $file])->assertStatus(422);
+    }
+
+    public function testStore()
+    {
+        Honeypot::disable();
+        $local = Storage::fake('local');
+        $public = Storage::fake('public');
+        $this->assertEquals(0, Dataset::count());
+
+        $file = $this->getFile('dataset.zip');
+        $response = $this->postJson("/api/datasets", [
+            'file' => $file,
+            'homepage' => 'random',
+        ]);
 
         $d = Dataset::first();
-        $response->assertRedirect("e/{$d->secret_slug}");
         $this->assertNotNull($d);
+        $response->assertRedirect("e/{$d->secret_slug}");
         $this->assertEquals('Test dataset', $d->name);
         $this->assertEquals(1024, $d->width);
         $this->assertEquals(684, $d->height);

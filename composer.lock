@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3bb4dacacf43532a01bf1d3d6dd3bbe1",
+    "content-hash": "7e80e3edec4f5114c32aee8c7204e1fc",
     "packages": [
         {
             "name": "dnoegel/php-xdg-base-dir",
@@ -870,6 +870,65 @@
                 "psr-3"
             ],
             "time": "2019-12-20T14:22:59+00:00"
+        },
+        {
+            "name": "msurguy/honeypot",
+            "version": "1.1.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/msurguy/Honeypot.git",
+                "reference": "16bba3255870fe272575fd3928d76a209ffec098"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/msurguy/Honeypot/zipball/16bba3255870fe272575fd3928d76a209ffec098",
+                "reference": "16bba3255870fe272575fd3928d76a209ffec098",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/config": "4.*|5.*|6.*",
+                "illuminate/support": "4.*|5.*|6.*",
+                "illuminate/translation": "4.*|5.*|6.*",
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "0.9.*",
+                "phpunit/phpunit": "4.0.*"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Msurguy\\Honeypot\\HoneypotServiceProvider"
+                    ],
+                    "aliases": {
+                        "Honeypot": "Msurguy\\Honeypot\\HoneypotFacade"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Msurguy\\Honeypot\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Maksim Surguy",
+                    "email": "m.surguy@gmail.com"
+                }
+            ],
+            "description": "Honeypot spam prevention",
+            "keywords": [
+                "Forms",
+                "Honeypot",
+                "laravel",
+                "spam"
+            ],
+            "time": "2020-02-15T20:16:56+00:00"
         },
         {
             "name": "nesbot/carbon",
