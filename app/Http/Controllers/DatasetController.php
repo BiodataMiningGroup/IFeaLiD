@@ -62,6 +62,7 @@ class DatasetController extends Controller
     {
         $request->dataset->touch();
         $request->dataset->publishZip();
+        $request->dataset->makeVisible(['secret_slug']);
 
         return view('show', [
             'editable' => true,

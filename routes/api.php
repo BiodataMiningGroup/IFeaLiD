@@ -13,7 +13,6 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::post('datasets', 'DatasetController@store');
 Route::delete('datasets/{id}', [
     'uses' => 'DatasetController@destroy',
 ]);

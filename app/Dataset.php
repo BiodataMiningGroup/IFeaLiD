@@ -158,11 +158,10 @@ class Dataset extends Model
     {
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if ($name === 'metadata.json') {
-                continue;
+            if ($name !== 'metadata.json') {
+                Storage::disk('public')
+                    ->writeStream("{$dirname}/{$name}", $zip->getStream($name));
             }
-
-            Storage::disk('public')->writeStream("{$dirname}/{$name}", $zip->getStream($name));
         }
     }
 }

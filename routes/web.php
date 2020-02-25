@@ -16,6 +16,8 @@ Route::get('/', [
     'uses' => 'DatasetController@create',
 ]);
 
+Route::post('/api/datasets', 'DatasetController@store');
+
 Route::get('/e/{slug}', [
     'as' => 'edit',
     'uses' => 'DatasetController@edit',

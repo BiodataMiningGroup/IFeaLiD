@@ -48,6 +48,10 @@ class StoreDataset extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            if (!$this->has('file')) {
+                return;
+            }
+
             $zip = new ZipArchive;
             $resource = $zip->open($this->file('file')->getPathname());
 

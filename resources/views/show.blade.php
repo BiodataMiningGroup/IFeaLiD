@@ -1,5 +1,7 @@
 @extends('base')
 
+@section('title', "RTFME - {$dataset->name}")
+
 @section('content')
-Show
+{!! $dataset !!}
 @endsection

@@ -1,1 +1,32 @@
-//
+@use 'normalize.css';
+@use 'skeleton.css';
+
+$success: #5cb85c;
+$info: #5bc0de;
+$warning: #f0ad4e;
+$danger: #d9534f;
+
+html, body, .home-container {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    background-color: #222;
+    color: #ccc;
+}
+
+.button {
+    color: #ccc !important;
+}
+
+.home-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-form .errors {
+    list-style: none;
+    color: $danger;
+}
