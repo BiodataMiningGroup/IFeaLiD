@@ -130,16 +130,28 @@ class DatasetControllerTest extends TestCase
 
     public function testEdit()
     {
+        Storage::fake('local');
+        $disk = Storage::fake('public');
+        $file = $this->getFile('dataset.zip');
         $d = factory(Dataset::class)->create();
+        $d->storeZip($file);
+
         $this->get("/e/{$d->public_slug}")->assertStatus(404);
         $this->get("/e/{$d->secret_slug}")->assertStatus(200)->assertViewIs('show');
+        $this->assertTrue($disk->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
     }
 
     public function testShow()
     {
+        Storage::fake('local');
+        $disk = Storage::fake('public');
+        $file = $this->getFile('dataset.zip');
         $d = factory(Dataset::class)->create();
+        $d->storeZip($file);
+
         $this->get("/s/{$d->secret_slug}")->assertStatus(404);
         $this->get("/s/{$d->public_slug}")->assertStatus(200)->assertViewIs('show');
+        $this->assertTrue($disk->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
     }
 
     public function testDestroy()

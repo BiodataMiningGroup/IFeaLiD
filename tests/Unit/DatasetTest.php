@@ -61,4 +61,34 @@ class DatasetTest extends TestCase
         $this->assertTrue($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}"));
         $this->assertTrue($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
     }
+
+    public function testDeleteZip()
+    {
+        $disk = Storage::fake('local');
+        $d = factory(Dataset::class)->create();
+        $disk->put("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip", '0');
+        $d->deleteZip();
+        $this->assertFalse($disk->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip"));
+    }
+
+    public function testDeletePublishedFiles()
+    {
+        $disk = Storage::fake('public');
+        $d = factory(Dataset::class)->create();
+        $disk->put("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png", '0');
+        $d->deletePublishedFiles();
+        $this->assertFalse($disk->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}"));
+    }
+
+    public function testDelete()
+    {
+        $local = Storage::fake('local');
+        $public = Storage::fake('public');
+        $d = factory(Dataset::class)->create();
+        $local->put("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip", '0');
+        $public->put("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png", '0');
+        $d->delete();
+        $this->assertFalse($local->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip"));
+        $this->assertFalse($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}"));
+    }
 }

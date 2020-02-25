@@ -42,8 +42,6 @@ class DatasetController extends Controller
      */
     public function store(StoreDataset $request)
     {
-        // TODO use spam protection (same as BIIGLE sign up)
-
         $file = $request->file('file');
         $dataset = Dataset::create($request->metadata);
         $dataset->storeZip($file);
@@ -63,6 +61,7 @@ class DatasetController extends Controller
     public function edit(EditDataset $request)
     {
         $request->dataset->touch();
+        $request->dataset->publishZip();
 
         return view('show', [
             'editable' => true,
@@ -79,6 +78,7 @@ class DatasetController extends Controller
     public function show(ShowDataset $request)
     {
         $request->dataset->touch();
+        $request->dataset->publishZip();
 
         return view('show', [
             'editable' => false,

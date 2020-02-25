@@ -30,5 +30,10 @@ class AppServiceProvider extends ServiceProvider
             $dataset->public_slug = Str::random(10);
             $dataset->secret_slug = Str::random(10);
         });
+
+        Dataset::deleted(function ($dataset) {
+            $dataset->deleteZip();
+            $dataset->deletePublishedFiles();
+        });
     }
 }

@@ -73,6 +73,14 @@ class Dataset extends Model
     }
 
     /**
+     * Delete the dataset ZIP from the local storage disk.
+     */
+    public function deleteZip()
+    {
+        return Storage::disk('local')->delete($this->getLocalDiskPath());
+    }
+
+    /**
      * Extract the dataset ZIP to the public storage disk.
      *
      * @param UploadedFile|null $zip Optional uploaded file from which the ZIP can be extracted withput having to load it from the local storage disk.
@@ -105,6 +113,18 @@ class Dataset extends Model
             $zip = new ZipArchive;
             $zip->open($file->getPathname());
             $this->publishDownloadedZip($zip, $publicPath);
+        }
+    }
+
+    /**
+     * Delete the published files from the public storage disk.
+     */
+    public function deletePublishedFiles()
+    {
+        $publicPath = $this->getPublicDiskPath();
+
+        if (Storage::disk('public')->exists("{$publicPath}/0.png")) {
+            Storage::disk('public')->deleteDirectory($publicPath);
         }
     }
 
