@@ -1,6 +1,6 @@
 @extends('base')
 
-@section('title', "RTFME - {$dataset->name}")
+@section('title', "vis4deep - {$dataset->name}")
 
 @section('content')
 {!! $dataset !!}
