@@ -32,7 +32,7 @@ class DatasetControllerTest extends TestCase
         $response = $this->post("/api/datasets", ['file' => $file]);
 
         $d = Dataset::first();
-        $response->assertRedirect("edit/{$d->secret_slug}");
+        $response->assertRedirect("e/{$d->secret_slug}");
         $this->assertNotNull($d);
         $this->assertEquals('Test dataset', $d->name);
         $this->assertEquals(1024, $d->width);
@@ -111,6 +111,31 @@ class DatasetControllerTest extends TestCase
         $file = $this->getFile('dataset_large_image.zip');
         $this->postJson("/api/datasets", ['file' => $file])
             ->assertStatus(422);
+    }
+
+    public function testEdit()
+    {
+        $d = factory(Dataset::class)->create();
+        $this->get("/e/{$d->public_slug}")->assertStatus(404);
+        $this->get("/e/{$d->secret_slug}")->assertStatus(200)->assertViewIs('show');
+    }
+
+    public function testShow()
+    {
+        $d = factory(Dataset::class)->create();
+        $this->get("/s/{$d->secret_slug}")->assertStatus(404);
+        $this->get("/s/{$d->public_slug}")->assertStatus(200)->assertViewIs('show');
+    }
+
+    public function testDestroy()
+    {
+        $d = factory(Dataset::class)->create();
+        $this->delete("/api/datasets/{$d->id}")->assertStatus(403);
+        $this->deleteJson("/api/datasets/{$d->id}", ['secret' => $d->secret_slug])
+            ->assertRedirect('/')
+            ->assertSessionHas('deleted', $d->name);
+
+        $this->assertNull($d->fresh());
     }
 
     protected function getFile($name)

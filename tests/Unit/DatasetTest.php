@@ -25,8 +25,10 @@ class DatasetTest extends TestCase
 
     public function testHiddenAttributes()
     {
-        $d = factory(Dataset::class)->create();
-        $this->assertArrayNotHasKey('secret_slug', $d->toArray());
+        $array = factory(Dataset::class)->create()->toArray();
+        $this->assertArrayNotHasKey('secret_slug', $array);
+        $this->assertArrayNotHasKey('created_at', $array);
+        $this->assertArrayNotHasKey('updated_at', $array);
     }
 
     public function testStoreZip()

@@ -73,7 +73,7 @@ class StoreDataset extends FormRequest
             }
 
             $metaValidator = Validator::make($this->metadata, [
-                'name' => 'required',
+                'name' => 'required|string|max:512',
                 'width' => 'required|integer|min:1|max:8192',
                 'height' => 'required|integer|min:1|max:8192',
                 'features' => 'required|integer|min:1|max:40000',

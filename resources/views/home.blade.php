@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+@extends('base')
+Home
 
-        <title>RTMFE</title>
-    </head>
-    <body>
-        Home
-    </body>
-</html>
+@if ($deleted)
+<br>Deleted {{$deleted}}
+@endif

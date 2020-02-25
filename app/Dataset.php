@@ -29,7 +29,12 @@ class Dataset extends Model
      *
      * @var array
      */
-    protected $hidden = ['secret_slug'];
+    protected $hidden = [
+        'secret_slug',
+        'accessed_at',
+        'created_at',
+        'updated_at',
+    ];
 
     /**
      * The attributes that are mass assignable.

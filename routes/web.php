@@ -16,13 +16,13 @@ Route::get('/', [
     'uses' => 'DatasetController@create',
 ]);
 
-Route::get('/edit/{slug}', [
+Route::get('/e/{slug}', [
     'as' => 'edit',
     'uses' => 'DatasetController@edit',
     'where' => ['slug' => '[0-9A-Za-z]{10}'],
 ]);
 
-Route::get('/show/{slug}', [
+Route::get('/s/{slug}', [
     'as' => 'show',
     'uses' => 'DatasetController@show',
     'where' => ['slug' => '[0-9A-Za-z]{10}'],

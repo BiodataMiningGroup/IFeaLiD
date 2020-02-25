@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use ZipArchive;
 use App\Dataset;
 use Illuminate\Http\Request;
+use App\Http\Requests\EditDataset;
+use App\Http\Requests\ShowDataset;
 use App\Http\Requests\StoreDataset;
+use App\Http\Requests\DestroyDataset;
 
 class DatasetController extends Controller
 {
@@ -26,7 +29,9 @@ class DatasetController extends Controller
      */
     public function create()
     {
-        return view('home');
+        return view('home', [
+            'deleted' => session('deleted'),
+        ]);
     }
 
     /**
@@ -52,44 +57,47 @@ class DatasetController extends Controller
     /**
      * Display the specified resource in edit mode.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  EditDataset  $request
      * @return \Illuminate\Http\Response
      */
-    public function edit(Request $request)
+    public function edit(EditDataset $request)
     {
-        //
+        $request->dataset->touch();
+
+        return view('show', [
+            'editable' => true,
+            'dataset' => $request->dataset,
+        ]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  ShowDataset  $request
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request)
+    public function show(ShowDataset $request)
     {
-        //
-    }
+        $request->dataset->touch();
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request)
-    {
-        //
+        return view('show', [
+            'editable' => false,
+            'dataset' => $request->dataset,
+        ]);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  DestroyDataset  $request
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Request $request)
+    public function destroy(DestroyDataset $request)
     {
-        //
+        $request->dataset->delete();
+
+        return redirect()->route('home')->with([
+            'deleted' => $request->dataset->name,
+        ]);
     }
 }

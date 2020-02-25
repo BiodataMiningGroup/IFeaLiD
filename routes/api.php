@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::resource('datasets', 'DatasetController', [
-    // TODO validate UUID
-    'only' => ['store'],
+Route::post('datasets', 'DatasetController@store');
+Route::delete('datasets/{id}', [
+    'uses' => 'DatasetController@destroy',
 ]);
