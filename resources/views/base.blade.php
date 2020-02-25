@@ -11,5 +11,10 @@
     </head>
     <body>
         @yield('content')
+        <script type="text/javascript" src="{{asset('js/app.js')}}"></script>
+        <script type="text/javascript">
+            Vue.http.options.root = '{{url('/')}}';
+            Vue.http.headers.common['X-CSRF-TOKEN'] = '{{csrf_token()}}';
+        </script>
     </body>
 </html>

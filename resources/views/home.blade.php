@@ -4,6 +4,7 @@
 
 <div class="home-container">
     <form class="upload-form" method="POST" action="{{ url('/api/datasets') }}" enctype="multipart/form-data">
+        <h1 class="logo"><img src="{{asset('logo.svg')}}" height="50"> vis4deep</h1>
         <div>
             <label for="file">Select the dataset ZIP file to upload</label>
             <input type="file" id="file" name="file" accept="application/zip">

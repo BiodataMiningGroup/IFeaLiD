@@ -1066,8 +1066,7 @@ there.
 /* Larger than Desktop HD */
 
 html,
-body,
-.home-container {
+body {
   width: 100%;
   height: 100%;
 }
@@ -1077,18 +1076,81 @@ body {
   color: #ccc;
 }
 
+.logo img {
+  vertical-align: middle;
+}
+
 .button {
   color: #ccc !important;
+  max-height: 100%;
+  line-height: inherit;
 }
 
 .home-container {
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
 }
 
 .upload-form .errors {
   list-style: none;
   color: #d9534f;
+}
+
+.show-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.show-container .header {
+  display: flex;
+  padding: 10px;
+  align-items: stretch;
+  height: 30px;
+  border-bottom: 1px solid black;
+  position: relative;
+}
+
+.show-container .header .logo {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
+  color: #999;
+}
+
+.show-container .header .logo img {
+  max-height: 100%;
+  margin-right: 10px;
+}
+
+.show-container .header .title {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 20px;
+  font-weight: bold;
+}
+
+.show-container .main {
+  display: flex;
+  flex: 1;
+}
+
+.show-container .main-content {
+  height: 100%;
+  flex: 1;
+  background-image: url(/images/noise.png?2ea30bc1d7e550abe2d0155ef20c63c4);
+}
+
+.show-container .main-aside {
+  height: 100%;
+  width: 200px;
+  border-left: 1px solid black;
 }
 
