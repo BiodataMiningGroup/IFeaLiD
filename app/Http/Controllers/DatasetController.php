@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use ZipArchive;
 use App\Dataset;
 use Illuminate\Http\Request;
@@ -44,10 +45,16 @@ class DatasetController extends Controller
     {
         $file = $request->file('file');
         $dataset = Dataset::create($request->metadata);
-        $dataset->storeZip($file);
-        // Publish the ZIP right away because the user is immediately redirected to see
-        // the dataset.
-        $dataset->publishZip($file);
+
+        try {
+            $dataset->storeZip($file);
+            // Publish the ZIP right away because the user is immediately redirected to
+            // see the dataset.
+            $dataset->publishZip($file);
+        } catch (Exception $e) {
+            $dataset->delete();
+            throw $e;
+        }
 
         return redirect()->route('edit', ['slug' => $dataset->secret_slug]);
     }
