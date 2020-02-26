@@ -41,7 +41,7 @@ class DatasetControllerTest extends TestCase
         $this->assertEquals(0, Dataset::count());
 
         $file = $this->getFile('dataset.zip');
-        $response = $this->postJson("/api/datasets", [
+        $response = $this->post("/api/datasets", [
             'file' => $file,
             'homepage' => 'random',
         ]);

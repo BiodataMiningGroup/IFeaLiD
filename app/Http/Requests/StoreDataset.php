@@ -71,14 +71,14 @@ class StoreDataset extends FormRequest
                 return;
             }
 
-            $this->metadata = json_decode($meta, true);
+            $meta = json_decode($meta, true);
 
-            if ($this->metadata === null) {
+            if ($meta === null) {
                 $validator->errors()->add('file', 'The dataset metadata is no valid JSON.');
                 return;
             }
 
-            $metaValidator = Validator::make($this->metadata, [
+            $metaValidator = Validator::make($meta, [
                 'name' => 'required|string|max:512',
                 'width' => 'required|integer|min:1|max:8192',
                 'height' => 'required|integer|min:1|max:8192',
@@ -89,6 +89,8 @@ class StoreDataset extends FormRequest
                 $validator->errors()->merge($metaValidator->errors());
                 return;
             }
+
+            $this->metadata = $metaValidator->validated();
 
             $numFiles = intval(ceil($this->metadata['features'] / 4.0));
             // +1 for metadata.json
