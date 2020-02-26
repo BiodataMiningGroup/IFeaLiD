@@ -129,11 +129,19 @@ class Dataset extends Model
     }
 
     /**
+     * Add the URL attribute to this instance.
+     */
+    public function withUrl()
+    {
+        $this->url = Storage::disk('public')->url($this->getPublicDiskPath());
+    }
+
+    /**
      * Get the path to the dataset files in the public storage disk.
      *
      * @return string
      */
-    public function getPublicDiskPath()
+    protected function getPublicDiskPath()
     {
         return Str::replaceLast('.zip', '', $this->getLocalDiskPath());
     }

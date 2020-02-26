@@ -91,4 +91,12 @@ class DatasetTest extends TestCase
         $this->assertFalse($local->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip"));
         $this->assertFalse($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}"));
     }
+
+    public function testWithUrl()
+    {
+        $d = factory(Dataset::class)->create();
+        $this->assertNull($d->url);
+        $d->withUrl();
+        $this->assertNotNull($d->url);
+    }
 }
