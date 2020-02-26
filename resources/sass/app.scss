@@ -1,5 +1,7 @@
-@use 'normalize.css';
-@use 'skeleton.css';
+@use 'normalize';
+@use 'skeleton';
+@use '../../node_modules/ol/ol';
+@use 'components/visualization';
 
 $success: #5cb85c;
 $info: #5bc0de;

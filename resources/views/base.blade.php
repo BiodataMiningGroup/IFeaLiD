@@ -16,5 +16,6 @@
             Vue.http.options.root = '{{url('/')}}';
             Vue.http.headers.common['X-CSRF-TOKEN'] = '{{csrf_token()}}';
         </script>
+        @stack('scripts')
     </body>
 </html>
