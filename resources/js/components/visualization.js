@@ -5,6 +5,7 @@ import ImageSource from 'ol/source/ImageStatic';
 import Projection from 'ol/proj/Projection';
 import WebglHandler from '../webgl/Handler';
 import SimilarityProgram from '../webgl/programs/Similarity';
+import {containsCoordinate} from 'ol/extent';
 
 export default {
     template: `
@@ -28,7 +29,6 @@ export default {
             this.canvas.height = this.dataset.height;
         },
         initializeOpenLayers: function () {
-
             let projection = new Projection({
                 code: 'image',
                 units: 'pixels',
@@ -46,15 +46,22 @@ export default {
                 extent: this.extent,
             });
 
+            // Prevent image smoothing.
+            this.imageLayer.on('prerender', function (event) {
+                event.context.imageSmoothingEnabled = false;
+                event.context.webkitImageSmoothingEnabled = false;
+                event.context.mozImageSmoothingEnabled = false;
+                event.context.msImageSmoothingEnabled = false;
+            });
+
             this.map = new Map({
                 target: this.$refs.map,
                 layers: [this.imageLayer],
                 view: new View({
-                    center: [0, 0],
-                    zoom: 0,
                     projection: projection,
                 }),
             });
+
 
             this.map.getView().fit(this.extent, {
                 padding: [10, 10, 10, 10],
@@ -109,10 +116,20 @@ export default {
 
             this.fetchImages()
                 .then(this.handler.storeTiles.bind(this.handler))
+                .then(this.render)
                 .then(() => {
-                    this.handler.render([this.similarityProgram]);
-                    this.map.render();
+                    this.map.on('pointermove', this.updateMousePosition);
                 });
+        },
+        render: function () {
+            this.handler.render([this.similarityProgram]);
+            this.map.render();
+        },
+        updateMousePosition: function (event) {
+            if (containsCoordinate(this.extent, event.coordinate)) {
+                this.similarityProgram.setMousePosition(event.coordinate);
+                this.render();
+            }
         },
     },
     created: function () {

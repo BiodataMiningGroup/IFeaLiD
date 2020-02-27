@@ -58852,6 +58852,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ol/proj/Projection */ "./node_modules/ol/proj/Projection.js");
 /* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../webgl/Handler */ "./resources/js/webgl/Handler.js");
 /* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
+/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
+
 
 
 
@@ -58892,13 +58894,18 @@ __webpack_require__.r(__webpack_exports__);
       this.imageLayer = new ol_layer_Image__WEBPACK_IMPORTED_MODULE_1__["default"]({
         source: this.canvasSource,
         extent: this.extent
+      }); // Prevent image smoothing.
+
+      this.imageLayer.on('prerender', function (event) {
+        event.context.imageSmoothingEnabled = false;
+        event.context.webkitImageSmoothingEnabled = false;
+        event.context.mozImageSmoothingEnabled = false;
+        event.context.msImageSmoothingEnabled = false;
       });
       this.map = new ol__WEBPACK_IMPORTED_MODULE_0__["Map"]({
         target: this.$refs.map,
         layers: [this.imageLayer],
         view: new ol__WEBPACK_IMPORTED_MODULE_0__["View"]({
-          center: [0, 0],
-          zoom: 0,
           projection: projection
         })
       });
@@ -58959,11 +58966,19 @@ __webpack_require__.r(__webpack_exports__);
       window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
       this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__["default"]('similarity', this.dataset);
       this.handler.addProgram(this.similarityProgram);
-      this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(function () {
-        _this2.handler.render([_this2.similarityProgram]);
-
-        _this2.map.render();
+      this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(function () {
+        _this2.map.on('pointermove', _this2.updateMousePosition);
       });
+    },
+    render: function render() {
+      this.handler.render([this.similarityProgram]);
+      this.map.render();
+    },
+    updateMousePosition: function updateMousePosition(event) {
+      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_7__["containsCoordinate"])(this.extent, event.coordinate)) {
+        this.similarityProgram.setMousePosition(event.coordinate);
+        this.render();
+      }
     }
   },
   created: function created() {//
@@ -59725,7 +59740,7 @@ function (_Program) {
   }, {
     key: "beforeRender",
     value: function beforeRender(gl, handler) {
-      gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[2]);
+      gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[1]);
       handler.bindTextures(); // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -59746,8 +59761,9 @@ function (_Program) {
     }
   }, {
     key: "setMousePosition",
-    value: function setMousePosition(mousePosition) {
-      this.mousePosition = mousePosition;
+    value: function setMousePosition(coordinate) {
+      // Norm x and y values and prevent webgl coordinate interpolation.
+      this.mousePosition = [(Math.floor(coordinate[0]) + 0.5) / this.dataset.width, (Math.floor(coordinate[1]) + 0.5) / this.dataset.height];
     }
   }]);
 
