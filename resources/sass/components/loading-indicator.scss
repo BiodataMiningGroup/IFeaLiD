@@ -1,0 +1,15 @@
+.loading-indicator {
+    width: 120px;
+    height: 120px;
+
+    path {
+        stroke-width: 6;
+        stroke: $primary;
+        fill: none;
+        transition: d 1s ease;
+    }
+
+    text {
+        fill: white;
+    }
+}

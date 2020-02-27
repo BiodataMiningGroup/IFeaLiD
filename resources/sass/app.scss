@@ -1,12 +1,18 @@
 @use 'normalize';
 @use 'skeleton';
 @use '../../node_modules/ol/ol';
-@use 'components/visualization';
+
+$primary: #fc6600;
+$secondary: #ffd700;
+$tertiary: #9f00b7;
 
 $success: #5cb85c;
 $info: #5bc0de;
 $warning: #f0ad4e;
 $danger: #d9534f;
+
+@import 'components/visualization';
+@import 'components/loading-indicator';
 
 html, body{
     width: 100%;

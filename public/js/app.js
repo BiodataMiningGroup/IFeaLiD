@@ -58823,6 +58823,8 @@ Object(_utils__WEBPACK_IMPORTED_MODULE_0__["mount"])('show-container', new Vue({
   components: _defineProperty({
     visualization: _components_visualization__WEBPACK_IMPORTED_MODULE_1__["default"]
   }, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_1__["default"]),
+  methods: {//
+  },
   created: function created() {//
   }
 }));
@@ -58862,6 +58864,68 @@ window.Vue.use(__webpack_require__(/*! vue-resource */ "./node_modules/vue-resou
 
 /***/ }),
 
+/***/ "./resources/js/components/loadingIndicator.js":
+/*!*****************************************************!*\
+  !*** ./resources/js/components/loadingIndicator.js ***!
+  \*****************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ({
+  template: "\n        <svg class=\"loading-indicator\" :height=\"size\" :width=\"size\">\n            <text text-anchor=\"middle\" dominant-baseline=\"middle\" :x=\"centerX\" :y=\"centerY\" v-text=\"progressText\"></text>\n            <path :d=\"draw\" />\n        </svg>\n    ",
+  props: {
+    size: {
+      required: true,
+      type: Number
+    },
+    progress: {
+      "default": 0,
+      type: Number
+    },
+    stroke: {
+      "default": 6,
+      type: Number
+    }
+  },
+  computed: {
+    centerX: function centerX() {
+      return this.size / 2;
+    },
+    centerY: function centerY() {
+      return this.size / 2;
+    },
+    draw: function draw() {
+      var radius = (this.size - this.stroke) / 2; // Don't use 360 degrees because the arc vanishes in this case.
+
+      var endAngle = 359.99 * this.progress;
+      return this.describeArc(this.centerX, this.centerY, radius, 0, endAngle);
+    },
+    progressText: function progressText() {
+      return "".concat(Math.round(this.progress * 100), " %");
+    }
+  },
+  methods: {
+    polarToCartesian: function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+      var angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+      return {
+        x: centerX + radius * Math.cos(angleInRadians),
+        y: centerY + radius * Math.sin(angleInRadians)
+      };
+    },
+    describeArc: function describeArc(x, y, radius, startAngle, endAngle) {
+      var start = this.polarToCartesian(x, y, radius, endAngle);
+      var end = this.polarToCartesian(x, y, radius, startAngle);
+      var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+      var d = ["M", start.x, start.y, "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(" ");
+      return d;
+    }
+  }
+});
+
+/***/ }),
+
 /***/ "./resources/js/components/visualization.js":
 /*!**************************************************!*\
   !*** ./resources/js/components/visualization.js ***!
@@ -58881,6 +58945,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
 /* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
 /* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
+/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+
 
 
 
@@ -58892,12 +58958,21 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-  template: "\n        <div class=\"visualization\" ref=\"map\"></div>\n    ",
+  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n        </div>\n    ",
   props: {
     dataset: {
       required: true,
       type: Object
     }
+  },
+  components: {
+    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_10__["default"]
+  },
+  data: function data() {
+    return {
+      loaded: 0,
+      ready: false
+    };
   },
   computed: {
     extent: function extent() {
@@ -58963,6 +59038,8 @@ __webpack_require__.r(__webpack_exports__);
       }
 
       var loadImage = function loadImage() {
+        _this.loaded = 1 - images.length / promises.length;
+
         if (images.length > 0) {
           var image = images.pop();
           var index = images.length;
@@ -59000,7 +59077,7 @@ __webpack_require__.r(__webpack_exports__);
       this.handler.addProgram(this.colorMapProgram);
       this.stretchIntensityProgram.link(this.similarityProgram);
       this.colorMapProgram.link(this.stretchIntensityProgram);
-      this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(function () {
+      this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(this.setReady).then(function () {
         _this2.map.on('pointermove', _this2.updateMousePosition);
       });
     },
@@ -59013,6 +59090,9 @@ __webpack_require__.r(__webpack_exports__);
         this.similarityProgram.setMousePosition(event.coordinate);
         this.render();
       }
+    },
+    setReady: function setReady() {
+      this.ready = true;
     }
   },
   created: function created() {//

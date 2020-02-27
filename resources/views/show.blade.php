@@ -15,7 +15,7 @@
     <div class="main">
         <div class="main-content">
             <visualization
-                :dataset="dataset"
+                v-bind:dataset="dataset"
             ></visualization>
         </div>
         <div class="main-aside">

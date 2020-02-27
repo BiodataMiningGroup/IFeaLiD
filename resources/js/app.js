@@ -9,6 +9,9 @@ mount('show-container', new Vue({
   components: {
     visualization, visualization,
   },
+  methods: {
+    //
+  },
   created: function () {
     //
   },

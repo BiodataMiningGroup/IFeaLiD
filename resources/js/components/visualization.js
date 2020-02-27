@@ -8,16 +8,30 @@ import SimilarityProgram from '../webgl/programs/Similarity';
 import StretchIntensityProgram from '../webgl/programs/StretchIntensity';
 import ColorMapProgram from '../webgl/programs/ColorMap';
 import {containsCoordinate} from 'ol/extent';
+import loadingIndicator from './loadingIndicator';
 
 export default {
     template: `
-        <div class="visualization" ref="map"></div>
+        <div class="visualization" ref="map">
+            <div v-if="!ready" class="loading-overlay">
+                <loading-indicator :size="120" :progress="loaded"></loading-indicator>
+            </div>
+        </div>
     `,
     props: {
         dataset: {
             required: true,
             type: Object,
         },
+    },
+    components: {
+        loadingIndicator: loadingIndicator,
+    },
+    data: function () {
+        return {
+            loaded: 0,
+            ready: false,
+        };
     },
     computed: {
         extent: function () {
@@ -83,6 +97,7 @@ export default {
             }
 
             let loadImage = () => {
+                this.loaded = 1 - (images.length / promises.length);
                 if (images.length > 0) {
                     let image = images.pop();
                     let index = images.length;
@@ -125,6 +140,7 @@ export default {
             this.fetchImages()
                 .then(this.handler.storeTiles.bind(this.handler))
                 .then(this.render)
+                .then(this.setReady)
                 .then(() => {
                     this.map.on('pointermove', this.updateMousePosition);
                 });
@@ -138,6 +154,9 @@ export default {
                 this.similarityProgram.setMousePosition(event.coordinate);
                 this.render();
             }
+        },
+        setReady: function () {
+            this.ready = true;
         },
     },
     created: function () {
