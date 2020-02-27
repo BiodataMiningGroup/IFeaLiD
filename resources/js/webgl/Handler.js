@@ -1,4 +1,4 @@
-import Program from './Program';
+import Program from './programs/Program';
 
 let TEXTURE_PREFIX = 'texture_';
 
@@ -26,7 +26,7 @@ export default class Handler {
 
         this.props_ = this.getProps_(this.gl_, this.dataset_, options);
 
-        this.programs_ = {};
+        this.programs_ = [];
 
         this.assets_ = {
             buffers: {},
@@ -92,14 +92,14 @@ export default class Handler {
     }
 
     prepareWebgl_(gl, assets) {
-        assets.buffers.textureCoordinateBuffer = gl.createBuffer();
+        let buffer = this.getBuffer('textureCoordinateBuffer');
         let textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-        gl.bindBuffer(gl.ARRAY_BUFFER, assets.buffers.textureCoordinateBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
 
-        assets.buffers.vertexCoordinateBuffer = gl.createBuffer();
+        buffer = this.getBuffer('vertexCoordinateBuffer');
         let vertexCoordinates = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-        gl.bindBuffer(gl.ARRAY_BUFFER, assets.buffers.vertexCoordinateBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertexCoordinates, gl.STATIC_DRAW);
     }
 
@@ -155,7 +155,7 @@ export default class Handler {
     }
 
     compileTexture3dFunction_(props) {
-        output = "\n";
+        let output = "\n";
 
         let columns = numberToFloatString(props.colsPerTexture);
         let tilesPerTexture = numberToFloatString(props.tilesPerTexture);
@@ -211,7 +211,7 @@ export default class Handler {
 
     compileShader_(gl, shader, source) {
         gl.shaderSource(shader, source);
-        gl.compileShader_(shader);
+        gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS) || gl.isContextLost()) {
             throw new WebglError(gl.getShaderInfoLog(shader));
         }
@@ -235,7 +235,7 @@ export default class Handler {
         gl.attachShader(program, fragmentShader);
         gl.linkProgram(program);
 
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS) || gl.isCOntextLost()) {
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS) || gl.isContextLost()) {
             throw new WebglError(gl.getProgramInfoLog(program));
         }
 
@@ -249,12 +249,13 @@ export default class Handler {
         // Set the parameters so images that are NPOT (not power of two) can be
         // rendered, too. Do this every time anew because external shader setUp methods
         // may change this.
-        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         // Disable texture filtering.
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+        // TODO: Do this some other way. Maybe flip vertex coordinates?
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
         return texture;
@@ -306,22 +307,23 @@ export default class Handler {
 
         let location = gl.getAttribLocation(program, name);
         gl.enableVertexAttribArray(location);
-        gl.useBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
     }
 
     bindTextures_(gl) {
-        this.forEachTexture_(function (name, index) {
+        this.forEachTexture_((name, index) => {
             gl.activeTexture(gl.TEXTURE0 + index);
-            gl.bindTexture(gl.TEXTURE_2D, this.assets_.textures[name]);
+            gl.bindTexture(gl.TEXTURE_2D, this.getTexture(name));
         });
     }
 
-    renderSync_(gl, ids) {
-        ids.forEach((id) => {
-            let program = this.programs_[id];
+    renderSync_(gl, programs) {
+        programs.forEach((program) => {
             gl.useProgram(program.getPointer());
             program.beforeRender(gl, this);
+            // TODO use TRIANGLE_STRIP
+            // https://webglfundamentals.org/webgl/lessons/webgl-points-lines-triangles.html
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             program.afterRender(gl, this);
         });
@@ -339,7 +341,7 @@ export default class Handler {
         });
 
         this.forEachTexture_((name, index, absIndex) => {
-            let texture = this.addTexture(name);
+            let texture = this.getTexture(name);
             let firstTile = absIndex * props.tilesPerTexture;
             let lastTile = firstTile + props.tilesPerTexture;
             let slice = images.slice(firstTile, lastTile);
@@ -353,42 +355,67 @@ export default class Handler {
         });
 
         Object.keys(assets.framebuffers).forEach(function (key) {
-            gl.deleteBuffer(assets.framebuffers[key]);
+            gl.deleteFramebuffer(assets.framebuffers[key]);
         });
 
         Object.keys(assets.textures).forEach(function (key) {
             gl.deleteTexture(assets.textures[key]);
         });
 
-        Object.keys(programs).forEach(function (key) {
-            let shaders = gl.getAttachedShaders(programs[key].getPointer());
+        programs.forEach(function (program) {
+            let shaders = gl.getAttachedShaders(program.getPointer());
             shaders.forEach(function (shader) {
                 gl.deleteShader(shader);
             });
-            gl.deleteProgram(programs[key].getPointer());
+            gl.deleteProgram(program.getPointer());
         });
 
         canvas.removeEventListener('webglcontextlost', this.handleContextLost);
     }
 
-    addTexture(id) {
-        id = `${id}`;
-        let texture = this.addTexture_(this.gl_, id);
-        this.assets_.textures[id] = texture;
+    createFramebuffer_(gl) {
+        return gl.createFramebuffer();
+    }
 
-        return texture;
+    getFramebuffer(id) {
+        if (!this.assets_.framebuffers[id]) {
+            this.assets_.framebuffers[id] = this.createFramebuffer_(this.gl_);
+        }
+
+        return this.assets_.framebuffers[id];
+    }
+
+    createBuffer_(gl) {
+        return gl.createBuffer();
+    }
+
+    getBuffer(id) {
+        if (!this.assets_.buffers[id]) {
+            this.assets_.buffers[id] = this.createBuffer_(this.gl_);
+        }
+
+        return this.assets_.buffers[id];
+    }
+
+    getTexture(id) {
+        id = `${id}`;
+        if (!this.assets_.textures[id]) {
+            this.assets_.textures[id] = this.addTexture_(this.gl_, id);
+        }
+
+        return this.assets_.textures[id];
     }
 
     useTextures(program) {
-        this.useTextures_(this.gl_, program);
+        this.useTextures_(this.gl_, program.getPointer());
     }
 
     useVertexPositions(program) {
-        this.usePositions_(this.gl_, program, 'a_vertex_position', this.assets_.vertexCoordinateBuffer);
+        this.usePositions_(this.gl_, program.getPointer(), 'a_vertex_position', this.getBuffer('vertexCoordinateBuffer'));
     }
 
     useTexturePositions(program) {
-        this.usePositions_(this.gl_, program, 'a_texture_position', this.assets_.textureCoordinateBuffer);
+        this.usePositions_(this.gl_, program.getPointer(), 'a_texture_position', this.getBuffer('textureCoordinateBuffer'));
     }
 
     bindTextures() {
@@ -402,17 +429,18 @@ export default class Handler {
 
         let vertexShader = this.createVertexShader_(gl, program.getVertexShaderSource());
         let fragmentShader = this.createFragmentShader_(gl, program.getFragmentShaderSource(), this.props_);
-        let programPointer = this.createShaderProgram_(vertexShader, fragmentShader);
+        let programPointer = this.createShaderProgram_(gl, vertexShader, fragmentShader);
 
         gl.useProgram(programPointer);
-        program.initialize(gl, this, programPointer);
+        program.setPointer(programPointer);
+        program.initialize(gl, this);
         gl.useProgram(null);
 
         return program;
     }
 
     addProgram(program) {
-        this.programs_[program.id] = this.addProgram_(this.gl_, program);
+        this.programs_.push(this.addProgram_(this.gl_, program));
     }
 
     storeTiles(images) {
@@ -420,19 +448,18 @@ export default class Handler {
         this.ready = true;
     }
 
-    renderSync() {
+    renderSync(programs) {
         if (!this.ready) {
             throw new WebglError('The tiles must be stored first.');
         }
 
-        this.renderSync_(this.gl_, arguments);
+        this.renderSync_(this.gl_, programs);
     }
 
-    render() {
+    render(programs) {
         if (!this.renderFrameId_) {
-            let args = arguments;
             this.renderFrameId_ = window.requestAnimationFrame(() => {
-                this.renderSync(args);
+                this.renderSync(programs);
                 this.renderFrameId_ = null;
             });
         }

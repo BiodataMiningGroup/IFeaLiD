@@ -1,17 +1,11 @@
 export default class Program {
     constructor(id) {
         this.id = `${id}`;
-        this.vertexShaderSourceUrl = '';
-        this.fragmentShaderSourceUrl = '';
         this.pointer = null;
     }
 
-    fetchSource_(url) {
+    initialize(gl, handler) {
         //
-    }
-
-    initialize(gl, handler, pointer) {
-        this.pointer = pointer;
     }
 
     beforeRender(gl, handler) {
@@ -26,12 +20,15 @@ export default class Program {
         return this.pointer;
     }
 
+    setPointer(pointer) {
+        this.pointer = pointer;
+    }
 
     getVertexShaderSource() {
-        return this.fetchSource_(this.vertexShaderSourceUrl);
+        return '';
     }
 
     getFragmentShaderSource() {
-        return this.fetchSource_(this.fragmentShaderSourceUrl);
+        return '';
     }
 }
