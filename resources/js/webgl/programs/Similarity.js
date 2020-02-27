@@ -36,7 +36,7 @@ export default class Similarity extends Program {
     }
 
     beforeRender(gl, handler) {
-        gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[2]);
+        gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[1]);
         handler.bindTextures();
         // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -54,7 +54,11 @@ export default class Similarity extends Program {
         return fragmentShaderSource;
     }
 
-    setMousePosition(mousePosition) {
-        this.mousePosition = mousePosition;
+    setMousePosition(coordinate) {
+        // Norm x and y values and prevent webgl coordinate interpolation.
+        this.mousePosition = [
+            (Math.floor(coordinate[0]) + 0.5) / this.dataset.width,
+            (Math.floor(coordinate[1]) + 0.5) / this.dataset.height,
+        ];
     }
 }
