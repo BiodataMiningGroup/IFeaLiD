@@ -59228,38 +59228,51 @@ function () {
     key: "getProps_",
     value: function getProps_(gl, dataset, options) {
       var props = {
+        // Units that are reserved for use outside of this instance.
         reservedUnits: options.reservedUnits === undefined ? 0 : options.reservedUnits,
+        // Total number of tiles.
         tiles: Math.ceil(dataset.depth / 4),
+        // Number of calid channels of the last tile as the dataset depth may not be
+        // divisible by 4.
         depthLastTile: dataset.depth % 4
       };
+      var maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      var maxTilesPerTexture = Math.floor(maxTextureSize / dataset.width) * Math.floor(maxTextureSize / dataset.height); // Use only as few units as possible, since switching between many units in the
+      // fragment shader is slow.
+
+      props.requiredUnits = Math.ceil(props.tiles / maxTilesPerTexture);
       var availableUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) - props.reservedUnits;
-      props.tilesPerTexture = Math.ceil(props.tiles / availableUnits);
+
+      if (props.requiredUnits > availableUnits) {
+        throw new WebglError("Not enough memory available for this dataset. Required: ".concat(props.requiredUnits, " texture image units. Available: ").concat(availableUnits, " texture image units."));
+      }
+
+      props.tilesPerTexture = Math.ceil(props.tiles / props.requiredUnits);
 
       if (dataset.width === 0 || dataset.height === 0 || props.tilesPerTexture === 0) {
         props.colsPerTexture = 0;
         props.rowsPerTexture = 0;
       } else {
-        props.colsPerTexture = Math.ceil(Math.sqrt(dataset.height * props.tilesPerTexture) / dataset.width);
+        // Lay out the tiles as an approximate square in the texture.
+        // Explanation: Compute the total area of all tiles. The square root is the
+        // edge length of the perfect square that has the total area. Then divide by
+        // the width to get the number of tiles that can be put in a row and have
+        // approximately the same width than the perfect square.
+        props.colsPerTexture = Math.ceil(Math.sqrt(dataset.width * dataset.height * props.tilesPerTexture) / dataset.width);
         props.rowsPerTexture = Math.ceil(props.tilesPerTexture / props.colsPerTexture);
       }
 
-      var availableTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-
-      if (props.colsPerTexture * dataset.width > availableTextureSize || props.rowsPerTexture * dataset.height > availableTextureSize) {
-        throw new WebglError("Not enough memory available for this dataset. Required: ".concat(props.colsPerTexture * dataset.width, " x ").concat(props.rowsPerTexture * dataset.height, ". Available: ").concat(availableTextureSize, " x ").concat(availableTextureSize, "."));
-      }
-
-      props.requiredUnits = props.tiles < availableUnits ? props.tiles : availableUnits;
       return props;
     }
   }, {
     key: "prepareWebgl_",
     value: function prepareWebgl_(gl, assets) {
+      // We only draw a simple rectangular canvas that consists of two triangles.
       var buffer = this.getBuffer('textureCoordinateBuffer');
       var textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
-      buffer = this.getBuffer('vertexCoordinateBuffer'); // Flip y-coordinates because the textures are stored flipped.
+      buffer = this.getBuffer('vertexCoordinateBuffer'); // Flip y-coordinates because the textures are stored y-flipped.
 
       var vertexCoordinates = new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -59325,7 +59338,7 @@ function () {
   }, {
     key: "compileFragmentShader_",
     value: function compileFragmentShader_(source, props) {
-      // Normalize linebreaks.
+      // Normalize linebreaks (e.g. for Windows).
       source = source.replace(/\r\n/g, "\n");
       source = source.replace(/<%=TILES=%>/g, props.tiles);
       source = source.replace(/<%=CHANNELS_LAST_TILE=%>/g, props.depthLastTile);
