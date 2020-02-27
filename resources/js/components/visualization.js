@@ -27,24 +27,24 @@ export default {
     components: {
         loadingIndicator: loadingIndicator,
     },
-    data: function () {
+    data () {
         return {
             loaded: 0,
             ready: false,
         };
     },
     computed: {
-        extent: function () {
+        extent() {
             return [0, 0, this.dataset.width, this.dataset.height];
         },
     },
     methods: {
-        initializeCanvas: function () {
+        initializeCanvas() {
             this.canvas = document.createElement('canvas');
             this.canvas.width = this.dataset.width;
             this.canvas.height = this.dataset.height;
         },
-        initializeOpenLayers: function () {
+        initializeOpenLayers() {
             let projection = new Projection({
                 code: 'image',
                 units: 'pixels',
@@ -80,7 +80,7 @@ export default {
                 padding: [10, 10, 10, 10],
             });
         },
-        fetchImages: function () {
+        fetchImages() {
             let count = Math.ceil(this.dataset.features / 4);
             let promises = [];
             let images = [];
@@ -114,7 +114,7 @@ export default {
 
             return Promise.all(promises);
         },
-        initializeWebgl: function () {
+        initializeWebgl() {
             this.handler = new WebglHandler({
                 canvas: this.canvas,
                 width: this.dataset.width,
@@ -145,24 +145,24 @@ export default {
                     this.map.on('pointermove', this.updateMousePosition);
                 });
         },
-        render: function () {
+        render() {
             this.handler.render();
             this.map.render();
         },
-        updateMousePosition: function (event) {
+        updateMousePosition(event) {
             if (containsCoordinate(this.extent, event.coordinate)) {
                 this.similarityProgram.setMousePosition(event.coordinate);
                 this.render();
             }
         },
-        setReady: function () {
+        setReady() {
             this.ready = true;
         },
     },
-    created: function () {
+    created() {
         //
     },
-    mounted: function () {
+    mounted() {
         this.initializeCanvas();
         this.initializeOpenLayers();
         this.initializeWebgl();

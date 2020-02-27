@@ -12,7 +12,7 @@ mount('show-container', new Vue({
   methods: {
     //
   },
-  created: function () {
+  created() {
     //
   },
 }));
