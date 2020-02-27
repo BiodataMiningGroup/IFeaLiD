@@ -28,7 +28,7 @@ void main() {
     // angle between the two vectors
     // <A,B> = ||A|| * ||B|| * cos(angle)
     // => angle = acos(<A,B>/(||A||*||B||))
-    float color = 0.0;
+    float angle = 0.0;
 
     // cummulating the squared length of this pixels vector
     float currentLength = 0.0;
@@ -101,7 +101,7 @@ void main() {
 
         currentLength += dot(current, current);
         sampleLength += dot(sample, sample);
-        color += dot(current, sample);
+        angle += dot(current, sample);
     }
 
     // if the intensities of this fragment are all 0, don't draw it
@@ -110,10 +110,14 @@ void main() {
         return;
     }
 
-    color *= inversesqrt(currentLength * sampleLength);
+    angle *= inversesqrt(currentLength * sampleLength);
 
-    // normalized with 1/(pi/2) beacuse pi/2 is the maximal possible angle
-    color = acos(color) * u_normalization;
+    // Normalize and clip angle to [0, 1].
+    angle = acos(angle) * u_normalization;
+    angle = min(1.0, max(0.0, angle));
 
-    gl_FragColor = vec4(vec3(1.0 - color), 1.0);
+    // Invert angle because a lower angle should signify a higher similarity.
+    angle = 1.0 - angle;
+
+    gl_FragColor = vec4(angle);
 }

@@ -1,7 +1,8 @@
 export default class Program {
-    constructor(id) {
-        this.id = `${id}`;
+    constructor(vertexShaderSource, fragmentShaderSource) {
         this.pointer = null;
+        this.vertexShaderSource = vertexShaderSource;
+        this.fragmentShaderSource = fragmentShaderSource;
     }
 
     initialize(gl, handler) {
@@ -25,10 +26,10 @@ export default class Program {
     }
 
     getVertexShaderSource() {
-        return '';
+        return this.vertexShaderSource;
     }
 
     getFragmentShaderSource() {
-        return '';
+        return this.fragmentShaderSource;
     }
 }

@@ -44301,10 +44301,23 @@ process.umask = function() { return 0; };
 
 /***/ }),
 
-/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.glsl.vert":
-/*!**********************************************************************************************!*\
-  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.glsl.vert ***!
-  \**********************************************************************************************/
+/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/color-map.fs":
+/*!***************************************************************************************!*\
+  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/color-map.fs ***!
+  \***************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform sampler2D u_input;\nuniform sampler2D u_color_map;\n\nvoid main() {\n   float intensity = texture2D(u_input, v_texture_position).r;\n   gl_FragColor = texture2D(u_color_map, vec2(intensity, 0.5));\n}\n");
+
+/***/ }),
+
+/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs":
+/*!***************************************************************************************!*\
+  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs ***!
+  \***************************************************************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -44314,16 +44327,29 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.glsl.frag":
+/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.fs":
+/*!****************************************************************************************!*\
+  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.fs ***!
+  \****************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_normalization;\n\n//uniform float u_channel_mask_dimension;\n//uniform float u_inv_channel_mask_dimension;\n\n//uniform sampler2D u_channel_mask;\n//uniform sampler2D u_region_mask;\n\nconst vec4 ONES = vec4(1);\nconst vec4 ZEROS = vec4(0);\n\n<%=SAMPLER_DEFINITION=%>\n\nvoid main() {\n    // if masked by the region mask, don't do anything\n    /*\n    if (texture2D(u_region_mask, v_texture_position).a == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n    */\n\n    // angle between the two vectors\n    // <A,B> = ||A|| * ||B|| * cos(angle)\n    // => angle = acos(<A,B>/(||A||*||B||))\n    float angle = 0.0;\n\n    // cummulating the squared length of this pixels vector\n    float currentLength = 0.0;\n    // cummulating the squared length of the sample pixels vector\n    float sampleLength = 0.0;\n\n    // temporary texture values of current position\n    vec4 current;\n    // temporary texture values of sample position\n    vec4 sample;\n\n    // the index of the current tile\n    float tile;\n    // the texture position on the channel mask of the current tile\n    // vec2 mask_position = vec2(0);\n    // the channel mask of the current tile\n    // vec4 channel_mask;\n\n    // the row-major index of the current tile on it's texture\n    float index_on_sampler;\n    // the column in which the current tile lies on the texture\n    float column;\n    // the row in which the current tile lies on the texture\n    float row;\n    // the index of the texture, the current tile is on\n    float sampler_index;\n\n    // the 2d coordinates of the current position on the correct texture\n    vec2 coords_2d_current;\n    // the 2d coordinates of the sample position on the correct texture\n    vec2 coords_2d_sample;\n\n    for (int i = 0; i < <%=TILES=%>; i++) {\n        tile = float(i);\n        /*\n        mask_position.s = mod(tile, u_channel_mask_dimension);\n        mask_position.t = floor(tile * u_inv_channel_mask_dimension);\n        mask_position *= u_inv_channel_mask_dimension;\n        channel_mask = texture2D(u_channel_mask, mask_position);\n        */\n\n        // check if any channels of this tile are to be computed\n        //if (dot(channel_mask, ONES) == 0.0) continue;\n\n        index_on_sampler = mod(tile, <%=TILES_PER_TEXTURE=%>);\n        column = mod(index_on_sampler, <%=TILE_COLUMNS=%>);\n        row = floor(index_on_sampler / <%=TILE_COLUMNS=%>);\n\n        coords_2d_sample = vec2(\n            <%=TILE_WIDTH=%> * (column + u_mouse_position.x),\n            <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)\n        );\n\n        coords_2d_current = vec2(\n            <%=TILE_WIDTH=%> * (column + v_texture_position.x),\n            <%=TILE_HEIGHT=%> * (row + v_texture_position.y)\n        );\n\n        // needed for DYNAMIC_SAMPLER_QUERIES\n        sampler_index = floor(tile / <%=TILES_PER_TEXTURE=%>);\n\n        // get rgba of the pixel to compare; filtered by the channel mask and\n        // get rgba of the position of this pixel; filtered by the channel mask\n        <%=DYNAMIC_SAMPLER_QUERIES\n        //sample = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        //current = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_current);\n        sample = texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        current = texture2D(<%=SAMPLER=%>, coords_2d_current);\n        =%>\n\n        currentLength += dot(current, current);\n        sampleLength += dot(sample, sample);\n        angle += dot(current, sample);\n    }\n\n    // if the intensities of this fragment are all 0, don't draw it\n    if (currentLength == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n\n    angle *= inversesqrt(currentLength * sampleLength);\n\n    // Normalize and clip angle to [0, 1].\n    angle = acos(angle) * u_normalization;\n    angle = min(1.0, max(0.0, angle));\n\n    // Invert angle because a lower angle should signify a higher similarity.\n    angle = 1.0 - angle;\n\n    gl_FragColor = vec4(angle);\n}\n");
+
+/***/ }),
+
+/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/stretch-intensity.fs":
 /*!***********************************************************************************************!*\
-  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.glsl.frag ***!
+  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/stretch-intensity.fs ***!
   \***********************************************************************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_normalization;\n\n//uniform float u_channel_mask_dimension;\n//uniform float u_inv_channel_mask_dimension;\n\n//uniform sampler2D u_channel_mask;\n//uniform sampler2D u_region_mask;\n\nconst vec4 ONES = vec4(1);\nconst vec4 ZEROS = vec4(0);\n\n<%=SAMPLER_DEFINITION=%>\n\nvoid main() {\n    // if masked by the region mask, don't do anything\n    /*\n    if (texture2D(u_region_mask, v_texture_position).a == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n    */\n\n    // angle between the two vectors\n    // <A,B> = ||A|| * ||B|| * cos(angle)\n    // => angle = acos(<A,B>/(||A||*||B||))\n    float color = 0.0;\n\n    // cummulating the squared length of this pixels vector\n    float currentLength = 0.0;\n    // cummulating the squared length of the sample pixels vector\n    float sampleLength = 0.0;\n\n    // temporary texture values of current position\n    vec4 current;\n    // temporary texture values of sample position\n    vec4 sample;\n\n    // the index of the current tile\n    float tile;\n    // the texture position on the channel mask of the current tile\n    // vec2 mask_position = vec2(0);\n    // the channel mask of the current tile\n    // vec4 channel_mask;\n\n    // the row-major index of the current tile on it's texture\n    float index_on_sampler;\n    // the column in which the current tile lies on the texture\n    float column;\n    // the row in which the current tile lies on the texture\n    float row;\n    // the index of the texture, the current tile is on\n    float sampler_index;\n\n    // the 2d coordinates of the current position on the correct texture\n    vec2 coords_2d_current;\n    // the 2d coordinates of the sample position on the correct texture\n    vec2 coords_2d_sample;\n\n    for (int i = 0; i < <%=TILES=%>; i++) {\n        tile = float(i);\n        /*\n        mask_position.s = mod(tile, u_channel_mask_dimension);\n        mask_position.t = floor(tile * u_inv_channel_mask_dimension);\n        mask_position *= u_inv_channel_mask_dimension;\n        channel_mask = texture2D(u_channel_mask, mask_position);\n        */\n\n        // check if any channels of this tile are to be computed\n        //if (dot(channel_mask, ONES) == 0.0) continue;\n\n        index_on_sampler = mod(tile, <%=TILES_PER_TEXTURE=%>);\n        column = mod(index_on_sampler, <%=TILE_COLUMNS=%>);\n        row = floor(index_on_sampler / <%=TILE_COLUMNS=%>);\n\n        coords_2d_sample = vec2(\n            <%=TILE_WIDTH=%> * (column + u_mouse_position.x),\n            <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)\n        );\n\n        coords_2d_current = vec2(\n            <%=TILE_WIDTH=%> * (column + v_texture_position.x),\n            <%=TILE_HEIGHT=%> * (row + v_texture_position.y)\n        );\n\n        // needed for DYNAMIC_SAMPLER_QUERIES\n        sampler_index = floor(tile / <%=TILES_PER_TEXTURE=%>);\n\n        // get rgba of the pixel to compare; filtered by the channel mask and\n        // get rgba of the position of this pixel; filtered by the channel mask\n        <%=DYNAMIC_SAMPLER_QUERIES\n        //sample = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        //current = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_current);\n        sample = texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        current = texture2D(<%=SAMPLER=%>, coords_2d_current);\n        =%>\n\n        currentLength += dot(current, current);\n        sampleLength += dot(sample, sample);\n        color += dot(current, sample);\n    }\n\n    // if the intensities of this fragment are all 0, don't draw it\n    if (currentLength == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n\n    color *= inversesqrt(currentLength * sampleLength);\n\n    // normalized with 1/(pi/2) beacuse pi/2 is the maximal possible angle\n    color = acos(color) * u_normalization;\n\n    gl_FragColor = vec4(vec3(1.0 - color), 1.0);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform sampler2D u_intensities;\n\nuniform float u_min_intensity;\nuniform float u_max_intensity;\n\nvoid main() {\n   float intensity = texture2D(u_intensities, v_texture_position).r;\n   intensity = (intensity - u_min_intensity) / (u_max_intensity - u_min_intensity);\n\n   gl_FragColor = vec4(vec3(intensity), 1.0);\n}\n");
 
 /***/ }),
 
@@ -58852,7 +58878,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ol/proj/Projection */ "./node_modules/ol/proj/Projection.js");
 /* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../webgl/Handler */ "./resources/js/webgl/Handler.js");
 /* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
-/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
+/* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
+/* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
+/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
+
+
 
 
 
@@ -58958,21 +58988,28 @@ __webpack_require__.r(__webpack_exports__);
         width: this.dataset.width,
         height: this.dataset.height,
         depth: this.dataset.features,
-        reservedUnits: 0
+        // Reserve units for the similarity, stretch intensity and color map textures.
+        reservedUnits: 3
       });
       window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
-      this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__["default"]('similarity', this.dataset);
+      this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__["default"](this.dataset);
+      this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_7__["default"](this.dataset);
+      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_8__["default"]();
       this.handler.addProgram(this.similarityProgram);
+      this.handler.addProgram(this.stretchIntensityProgram);
+      this.handler.addProgram(this.colorMapProgram);
+      this.stretchIntensityProgram.link(this.similarityProgram);
+      this.colorMapProgram.link(this.stretchIntensityProgram);
       this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(function () {
         _this2.map.on('pointermove', _this2.updateMousePosition);
       });
     },
     render: function render() {
-      this.handler.render([this.similarityProgram]);
+      this.handler.render();
       this.map.render();
     },
     updateMousePosition: function updateMousePosition(event) {
-      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_7__["containsCoordinate"])(this.extent, event.coordinate)) {
+      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_9__["containsCoordinate"])(this.extent, event.coordinate)) {
         this.similarityProgram.setMousePosition(event.coordinate);
         this.render();
       }
@@ -59302,7 +59339,7 @@ function () {
       var dynamicSamplerQueryRegexp = /<%=DYNAMIC_SAMPLER_QUERIES([\s\S]*)\n\s*=%>\n/;
       var code = dynamicSamplerQueryRegexp.exec(source);
 
-      if (code.length > 1) {
+      if (code && code.length > 1) {
         source = source.replace(dynamicSamplerQueryRegexp, this.compileDynamicSamplerQueries_(code[1]));
       }
 
@@ -59418,6 +59455,7 @@ function () {
     value: function renderSync_(gl, programs) {
       var _this2 = this;
 
+      programs = programs || this.programs_;
       programs.forEach(function (program) {
         gl.useProgram(program.getPointer());
         program.beforeRender(gl, _this2);
@@ -59592,6 +59630,96 @@ function () {
 
 /***/ }),
 
+/***/ "./resources/js/webgl/programs/ColorMap.js":
+/*!*************************************************!*\
+  !*** ./resources/js/webgl/programs/ColorMap.js ***!
+  \*************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ColorMap; });
+/* harmony import */ var _Program__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Program */ "./resources/js/webgl/programs/Program.js");
+/* harmony import */ var raw_loader_shaders_color_map_fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/color-map.fs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/color-map.fs");
+/* harmony import */ var raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.vs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs");
+/* harmony import */ var _colorMaps__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./colorMaps */ "./resources/js/webgl/programs/colorMaps.js");
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+
+
+var ColorMap =
+/*#__PURE__*/
+function (_Program) {
+  _inherits(ColorMap, _Program);
+
+  function ColorMap() {
+    var _this;
+
+    _classCallCheck(this, ColorMap);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ColorMap).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_color_map_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
+    _this.colorMapTexture = null;
+    _this.inputTexture = null;
+    return _this;
+  }
+
+  _createClass(ColorMap, [{
+    key: "initialize",
+    value: function initialize(gl, handler) {
+      var pointer = this.getPointer();
+      handler.useVertexPositions(this);
+      handler.useTexturePositions(this);
+      this.colorMapTexture = handler.getTexture('colorMap');
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, _colorMaps__WEBPACK_IMPORTED_MODULE_3__["FIRE"]);
+      gl.uniform1i(gl.getUniformLocation(pointer, 'u_color_map'), 1);
+    }
+  }, {
+    key: "beforeRender",
+    value: function beforeRender(gl, handler) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.inputTexture);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.colorMapTexture);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+  }, {
+    key: "afterRender",
+    value: function afterRender(gl, handler) {//
+    }
+  }, {
+    key: "link",
+    value: function link(program) {
+      this.inputTexture = program.getOutputTexture();
+    }
+  }]);
+
+  return ColorMap;
+}(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
 /***/ "./resources/js/webgl/programs/Program.js":
 /*!************************************************!*\
   !*** ./resources/js/webgl/programs/Program.js ***!
@@ -59611,11 +59739,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var Program =
 /*#__PURE__*/
 function () {
-  function Program(id) {
+  function Program(vertexShaderSource, fragmentShaderSource) {
     _classCallCheck(this, Program);
 
-    this.id = "".concat(id);
     this.pointer = null;
+    this.vertexShaderSource = vertexShaderSource;
+    this.fragmentShaderSource = fragmentShaderSource;
   }
 
   _createClass(Program, [{
@@ -59643,12 +59772,12 @@ function () {
   }, {
     key: "getVertexShaderSource",
     value: function getVertexShaderSource() {
-      return '';
+      return this.vertexShaderSource;
     }
   }, {
     key: "getFragmentShaderSource",
     value: function getFragmentShaderSource() {
-      return '';
+      return this.fragmentShaderSource;
     }
   }]);
 
@@ -59670,8 +59799,8 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Similarity; });
 /* harmony import */ var _Program__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Program */ "./resources/js/webgl/programs/Program.js");
-/* harmony import */ var raw_loader_shaders_similarity_glsl_frag__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/similarity.glsl.frag */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.glsl.frag");
-/* harmony import */ var raw_loader_shaders_rectangle_glsl_vert__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.glsl.vert */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.glsl.vert");
+/* harmony import */ var raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/similarity.fs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.fs");
+/* harmony import */ var raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.vs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs");
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -59700,16 +59829,22 @@ var Similarity =
 function (_Program) {
   _inherits(Similarity, _Program);
 
-  function Similarity(id, dataset) {
+  function Similarity(dataset) {
     var _this;
 
     _classCallCheck(this, Similarity);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Similarity).call(this, id));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Similarity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
     _this.mousePosition = [0, 0];
     _this.mousePositionPointer = null;
     _this.dataset = dataset;
     _this.framebuffer = null;
+    _this.outputTexture = null;
+    _this.intensities = new Uint8Array(_this.dataset.width * _this.dataset.height * 4);
+    _this.intensityStats = {
+      min: 0,
+      max: 0
+    };
     return _this;
   }
 
@@ -59723,11 +59858,11 @@ function (_Program) {
       var normalization = gl.getUniformLocation(pointer, 'u_normalization');
       gl.uniform1f(normalization, 1 / MAX_DISTANCE);
       this.mousePositionPointer = gl.getUniformLocation(pointer, 'u_mouse_position');
-      this.framebuffer = handler.getFramebuffer('distances');
+      this.framebuffer = handler.getFramebuffer('similarity');
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-      var texture = handler.getTexture('distanceTexture');
+      this.outputTexture = handler.getTexture('similarity');
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
@@ -59735,23 +59870,20 @@ function (_Program) {
     key: "beforeRender",
     value: function beforeRender(gl, handler) {
       gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[1]);
-      handler.bindTextures(); // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      handler.bindTextures();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
     }
   }, {
     key: "afterRender",
-    value: function afterRender(gl, handler) {// TODO update feature channel intensities
-    }
-  }, {
-    key: "getVertexShaderSource",
-    value: function getVertexShaderSource() {
-      return raw_loader_shaders_rectangle_glsl_vert__WEBPACK_IMPORTED_MODULE_2__["default"];
-    }
-  }, {
-    key: "getFragmentShaderSource",
-    value: function getFragmentShaderSource() {
-      return raw_loader_shaders_similarity_glsl_frag__WEBPACK_IMPORTED_MODULE_1__["default"];
+    value: function afterRender(gl, handler) {
+      gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, this.intensities);
+      this.intensityStats.max = 0;
+      this.intensityStats.min = 255;
+
+      for (var i = this.intensities.length - 1; i >= 0; i -= 4) {
+        this.intensityStats.max = Math.max(this.intensities[i], this.intensityStats.max);
+        this.intensityStats.min = Math.min(this.intensities[i], this.intensityStats.min);
+      }
     }
   }, {
     key: "setMousePosition",
@@ -59760,11 +59892,142 @@ function (_Program) {
       // Flip y-coordinates because the webgl textures are flipped, too.
       this.mousePosition = [(Math.floor(coordinate[0]) + 0.5) / this.dataset.width, 1 - (Math.floor(coordinate[1]) + 0.5) / this.dataset.height];
     }
+  }, {
+    key: "getOutputTexture",
+    value: function getOutputTexture() {
+      return this.outputTexture;
+    }
+  }, {
+    key: "getIntensityStats",
+    value: function getIntensityStats() {
+      return this.intensityStats;
+    }
   }]);
 
   return Similarity;
 }(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
 
+
+
+/***/ }),
+
+/***/ "./resources/js/webgl/programs/StretchIntensity.js":
+/*!*********************************************************!*\
+  !*** ./resources/js/webgl/programs/StretchIntensity.js ***!
+  \*********************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return StretchIntensity; });
+/* harmony import */ var _Program__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Program */ "./resources/js/webgl/programs/Program.js");
+/* harmony import */ var raw_loader_shaders_stretch_intensity_fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/stretch-intensity.fs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/stretch-intensity.fs");
+/* harmony import */ var raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.vs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs");
+/* harmony import */ var _colorMaps__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./colorMaps */ "./resources/js/webgl/programs/colorMaps.js");
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+
+
+var StretchIntensity =
+/*#__PURE__*/
+function (_Program) {
+  _inherits(StretchIntensity, _Program);
+
+  function StretchIntensity(dataset) {
+    var _this;
+
+    _classCallCheck(this, StretchIntensity);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(StretchIntensity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_stretch_intensity_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
+    _this.dataset = dataset;
+    _this.outputTexture = null;
+    _this.inputTexture = null;
+    _this.intensityStats = null;
+    _this.minIntensityPointer = null;
+    _this.maxIntensityPointer = null;
+    return _this;
+  }
+
+  _createClass(StretchIntensity, [{
+    key: "initialize",
+    value: function initialize(gl, handler) {
+      var pointer = this.getPointer();
+      handler.useVertexPositions(this);
+      handler.useTexturePositions(this);
+      this.framebuffer = handler.getFramebuffer('stretchIntensity');
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+      this.outputTexture = handler.getTexture('stretchIntensity');
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      this.minIntensityPointer = gl.getUniformLocation(pointer, 'u_min_intensity');
+      this.maxIntensityPointer = gl.getUniformLocation(pointer, 'u_max_intensity');
+    }
+  }, {
+    key: "beforeRender",
+    value: function beforeRender(gl, handler) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.inputTexture);
+      gl.uniform1f(this.minIntensityPointer, this.intensityStats.min / 255);
+      gl.uniform1f(this.maxIntensityPointer, this.intensityStats.max / 255);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    }
+  }, {
+    key: "afterRender",
+    value: function afterRender(gl, handler) {//
+    }
+  }, {
+    key: "link",
+    value: function link(program) {
+      this.intensityStats = program.getIntensityStats();
+      this.inputTexture = program.getOutputTexture();
+    }
+  }, {
+    key: "getOutputTexture",
+    value: function getOutputTexture() {
+      return this.outputTexture;
+    }
+  }]);
+
+  return StretchIntensity;
+}(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
+/***/ "./resources/js/webgl/programs/colorMaps.js":
+/*!**************************************************!*\
+  !*** ./resources/js/webgl/programs/colorMaps.js ***!
+  \**************************************************/
+/*! exports provided: FIRE */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FIRE", function() { return FIRE; });
+var FIRE = new Uint8Array([0, 0, 0, 0, 0, 7, 0, 0, 15, 0, 0, 22, 0, 0, 30, 0, 0, 38, 0, 0, 45, 0, 0, 53, 0, 0, 61, 0, 0, 65, 0, 0, 69, 0, 0, 74, 0, 0, 78, 0, 0, 82, 0, 0, 87, 0, 0, 91, 1, 0, 96, 4, 0, 100, 7, 0, 104, 10, 0, 108, 13, 0, 113, 16, 0, 117, 19, 0, 121, 22, 0, 125, 25, 0, 130, 28, 0, 134, 31, 0, 138, 34, 0, 143, 37, 0, 147, 40, 0, 151, 43, 0, 156, 46, 0, 160, 49, 0, 165, 52, 0, 168, 55, 0, 171, 58, 0, 175, 61, 0, 178, 64, 0, 181, 67, 0, 185, 70, 0, 188, 73, 0, 192, 76, 0, 195, 79, 0, 199, 82, 0, 202, 85, 0, 206, 88, 0, 209, 91, 0, 213, 94, 0, 216, 98, 0, 220, 101, 0, 220, 104, 0, 221, 107, 0, 222, 110, 0, 223, 113, 0, 224, 116, 0, 225, 119, 0, 226, 122, 0, 227, 125, 0, 224, 128, 0, 222, 131, 0, 220, 134, 0, 218, 137, 0, 216, 140, 0, 214, 143, 0, 212, 146, 0, 210, 148, 0, 206, 150, 0, 202, 152, 0, 199, 154, 0, 195, 156, 0, 191, 158, 0, 188, 160, 0, 184, 162, 0, 181, 163, 0, 177, 164, 0, 173, 166, 0, 169, 167, 0, 166, 168, 0, 162, 170, 0, 158, 171, 0, 154, 173, 0, 151, 174, 0, 147, 175, 0, 143, 177, 0, 140, 178, 0, 136, 179, 0, 132, 181, 0, 129, 182, 0, 125, 184, 0, 122, 185, 0, 118, 186, 0, 114, 188, 0, 111, 189, 0, 107, 190, 0, 103, 192, 0, 100, 193, 0, 96, 195, 0, 93, 196, 1, 89, 198, 3, 85, 199, 5, 82, 201, 7, 78, 202, 8, 74, 204, 10, 71, 205, 12, 67, 207, 14, 64, 208, 16, 60, 209, 19, 56, 210, 21, 53, 212, 24, 49, 213, 27, 45, 214, 29, 42, 215, 32, 38, 217, 35, 35, 218, 37, 31, 220, 40, 27, 221, 43, 23, 223, 46, 20, 224, 48, 16, 226, 51, 12, 227, 54, 8, 229, 57, 5, 230, 59, 4, 231, 62, 3, 233, 65, 3, 234, 68, 2, 235, 70, 1, 237, 73, 1, 238, 76, 0, 240, 79, 0, 241, 81, 0, 243, 84, 0, 244, 87, 0, 246, 90, 0, 247, 92, 0, 249, 95, 0, 250, 98, 0, 252, 101, 0, 252, 103, 0, 252, 105, 0, 253, 107, 0, 253, 109, 0, 253, 111, 0, 254, 113, 0, 254, 115, 0, 255, 117, 0, 255, 119, 0, 255, 121, 0, 255, 123, 0, 255, 125, 0, 255, 127, 0, 255, 129, 0, 255, 131, 0, 255, 133, 0, 255, 134, 0, 255, 136, 0, 255, 138, 0, 255, 140, 0, 255, 141, 0, 255, 143, 0, 255, 145, 0, 255, 147, 0, 255, 148, 0, 255, 150, 0, 255, 152, 0, 255, 154, 0, 255, 155, 0, 255, 157, 0, 255, 159, 0, 255, 161, 0, 255, 162, 0, 255, 164, 0, 255, 166, 0, 255, 168, 0, 255, 169, 0, 255, 171, 0, 255, 173, 0, 255, 175, 0, 255, 176, 0, 255, 178, 0, 255, 180, 0, 255, 182, 0, 255, 184, 0, 255, 186, 0, 255, 188, 0, 255, 190, 0, 255, 191, 0, 255, 193, 0, 255, 195, 0, 255, 197, 0, 255, 199, 0, 255, 201, 0, 255, 203, 0, 255, 205, 0, 255, 206, 0, 255, 208, 0, 255, 210, 0, 255, 212, 0, 255, 213, 0, 255, 215, 0, 255, 217, 0, 255, 219, 0, 255, 220, 0, 255, 222, 0, 255, 224, 0, 255, 226, 0, 255, 228, 0, 255, 230, 0, 255, 232, 0, 255, 234, 0, 255, 235, 4, 255, 237, 8, 255, 239, 13, 255, 241, 17, 255, 242, 21, 255, 244, 26, 255, 246, 30, 255, 248, 35, 255, 248, 42, 255, 249, 50, 255, 250, 58, 255, 251, 66, 255, 252, 74, 255, 253, 82, 255, 254, 90, 255, 255, 98, 255, 255, 105, 255, 255, 113, 255, 255, 121, 255, 255, 129, 255, 255, 136, 255, 255, 144, 255, 255, 152, 255, 255, 160, 255, 255, 167, 255, 255, 175, 255, 255, 183, 255, 255, 191, 255, 255, 199, 255, 255, 207, 255, 255, 215, 255, 255, 223, 255, 255, 227, 255, 255, 231, 255, 255, 235, 255, 255, 239, 255, 255, 243, 255, 255, 247, 255, 255, 251, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]);
 
 
 /***/ }),

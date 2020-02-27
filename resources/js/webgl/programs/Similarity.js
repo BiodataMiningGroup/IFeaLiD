@@ -1,17 +1,22 @@
 import Program from './Program';
-import fragmentShaderSource from 'raw-loader!../shaders/similarity.glsl.frag';
-import vertexShaderSource from 'raw-loader!../shaders/rectangle.glsl.vert';
+import fragmentShaderSource from 'raw-loader!../shaders/similarity.fs';
+import vertexShaderSource from 'raw-loader!../shaders/rectangle.vs';
 
 let MAX_DISTANCE = Math.PI / 2;
 
 export default class Similarity extends Program {
-    constructor(id, dataset) {
-        super(id);
-
+    constructor(dataset) {
+        super(vertexShaderSource, fragmentShaderSource);
         this.mousePosition = [0, 0];
         this.mousePositionPointer = null;
         this.dataset = dataset;
         this.framebuffer = null;
+        this.outputTexture = null;
+        this.intensities = new Uint8Array(this.dataset.width * this.dataset.height * 4);
+        this.intensityStats = {
+            min: 0,
+            max: 0,
+        };
     }
 
     initialize(gl, handler) {
@@ -25,12 +30,12 @@ export default class Similarity extends Program {
 
         this.mousePositionPointer = gl.getUniformLocation(pointer, 'u_mouse_position');
 
-        this.framebuffer = handler.getFramebuffer('distances');
+        this.framebuffer = handler.getFramebuffer('similarity');
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-        let texture = handler.getTexture('distanceTexture');
+        this.outputTexture = handler.getTexture('similarity');
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
@@ -38,20 +43,17 @@ export default class Similarity extends Program {
     beforeRender(gl, handler) {
         gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[1]);
         handler.bindTextures();
-        // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
     }
 
     afterRender(gl, handler) {
-        // TODO update feature channel intensities
-    }
-
-    getVertexShaderSource() {
-        return vertexShaderSource;
-    }
-
-    getFragmentShaderSource() {
-        return fragmentShaderSource;
+        gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, this.intensities);
+        this.intensityStats.max = 0;
+        this.intensityStats.min = 255;
+        for (var i = this.intensities.length - 1; i >= 0; i -= 4) {
+            this.intensityStats.max = Math.max(this.intensities[i], this.intensityStats.max);
+            this.intensityStats.min = Math.min(this.intensities[i], this.intensityStats.min);
+        }
     }
 
     setMousePosition(coordinate) {
@@ -61,5 +63,13 @@ export default class Similarity extends Program {
             (Math.floor(coordinate[0]) + 0.5) / this.dataset.width,
             1 - (Math.floor(coordinate[1]) + 0.5) / this.dataset.height,
         ];
+    }
+
+    getOutputTexture() {
+        return this.outputTexture;
+    }
+
+    getIntensityStats() {
+        return this.intensityStats;
     }
 }

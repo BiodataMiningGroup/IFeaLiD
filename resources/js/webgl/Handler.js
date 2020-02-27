@@ -203,7 +203,7 @@ export default class Handler {
 
         let dynamicSamplerQueryRegexp = /<%=DYNAMIC_SAMPLER_QUERIES([\s\S]*)\n\s*=%>\n/;
         let code = dynamicSamplerQueryRegexp.exec(source);
-        if (code.length > 1) {
+        if (code && code.length > 1) {
             source = source.replace(dynamicSamplerQueryRegexp, this.compileDynamicSamplerQueries_(code[1]))
         }
 
@@ -317,6 +317,7 @@ export default class Handler {
     }
 
     renderSync_(gl, programs) {
+        programs = programs || this.programs_;
         programs.forEach((program) => {
             gl.useProgram(program.getPointer());
             program.beforeRender(gl, this);

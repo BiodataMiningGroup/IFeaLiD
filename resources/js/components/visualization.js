@@ -5,6 +5,8 @@ import ImageSource from 'ol/source/ImageStatic';
 import Projection from 'ol/proj/Projection';
 import WebglHandler from '../webgl/Handler';
 import SimilarityProgram from '../webgl/programs/Similarity';
+import StretchIntensityProgram from '../webgl/programs/StretchIntensity';
+import ColorMapProgram from '../webgl/programs/ColorMap';
 import {containsCoordinate} from 'ol/extent';
 
 export default {
@@ -103,13 +105,22 @@ export default {
                 width: this.dataset.width,
                 height: this.dataset.height,
                 depth: this.dataset.features,
-                reservedUnits: 0,
+                // Reserve units for the similarity, stretch intensity and color map textures.
+                reservedUnits: 3,
             });
 
             window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
 
-            this.similarityProgram = new SimilarityProgram('similarity', this.dataset);
+            this.similarityProgram = new SimilarityProgram(this.dataset);
+            this.stretchIntensityProgram = new StretchIntensityProgram(this.dataset);
+            this.colorMapProgram = new ColorMapProgram();
             this.handler.addProgram(this.similarityProgram);
+            this.handler.addProgram(this.stretchIntensityProgram);
+            this.handler.addProgram(this.colorMapProgram);
+
+            this.stretchIntensityProgram.link(this.similarityProgram);
+            this.colorMapProgram.link(this.stretchIntensityProgram);
+
 
             this.fetchImages()
                 .then(this.handler.storeTiles.bind(this.handler))
@@ -119,7 +130,7 @@ export default {
                 });
         },
         render: function () {
-            this.handler.render([this.similarityProgram]);
+            this.handler.render();
             this.map.render();
         },
         updateMousePosition: function (event) {
