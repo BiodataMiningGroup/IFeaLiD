@@ -56,9 +56,10 @@ export default class Similarity extends Program {
 
     setMousePosition(coordinate) {
         // Norm x and y values and prevent webgl coordinate interpolation.
+        // Flip y-coordinates because the webgl textures are flipped, too.
         this.mousePosition = [
             (Math.floor(coordinate[0]) + 0.5) / this.dataset.width,
-            (Math.floor(coordinate[1]) + 0.5) / this.dataset.height,
+            1 - (Math.floor(coordinate[1]) + 0.5) / this.dataset.height,
         ];
     }
 }

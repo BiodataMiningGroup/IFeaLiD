@@ -93,12 +93,13 @@ export default class Handler {
 
     prepareWebgl_(gl, assets) {
         let buffer = this.getBuffer('textureCoordinateBuffer');
-        let textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
+        let textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
 
         buffer = this.getBuffer('vertexCoordinateBuffer');
-        let vertexCoordinates = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
+        // Flip y-coordinates because the textures are stored flipped.
+        let vertexCoordinates = new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]);
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertexCoordinates, gl.STATIC_DRAW);
     }
@@ -255,9 +256,6 @@ export default class Handler {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-        // TODO: Do this some other way. Maybe flip vertex coordinates?
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
         return texture;
     }
 
@@ -322,9 +320,7 @@ export default class Handler {
         programs.forEach((program) => {
             gl.useProgram(program.getPointer());
             program.beforeRender(gl, this);
-            // TODO use TRIANGLE_STRIP
-            // https://webglfundamentals.org/webgl/lessons/webgl-points-lines-triangles.html
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             program.afterRender(gl, this);
         });
     }

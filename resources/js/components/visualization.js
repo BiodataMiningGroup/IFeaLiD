@@ -49,9 +49,6 @@ export default {
             // Prevent image smoothing.
             this.imageLayer.on('prerender', function (event) {
                 event.context.imageSmoothingEnabled = false;
-                event.context.webkitImageSmoothingEnabled = false;
-                event.context.mozImageSmoothingEnabled = false;
-                event.context.msImageSmoothingEnabled = false;
             });
 
             this.map = new Map({

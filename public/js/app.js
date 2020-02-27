@@ -58898,9 +58898,6 @@ __webpack_require__.r(__webpack_exports__);
 
       this.imageLayer.on('prerender', function (event) {
         event.context.imageSmoothingEnabled = false;
-        event.context.webkitImageSmoothingEnabled = false;
-        event.context.mozImageSmoothingEnabled = false;
-        event.context.msImageSmoothingEnabled = false;
       });
       this.map = new ol__WEBPACK_IMPORTED_MODULE_0__["Map"]({
         target: this.$refs.map,
@@ -59222,11 +59219,12 @@ function () {
     key: "prepareWebgl_",
     value: function prepareWebgl_(gl, assets) {
       var buffer = this.getBuffer('textureCoordinateBuffer');
-      var textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
+      var textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
-      buffer = this.getBuffer('vertexCoordinateBuffer');
-      var vertexCoordinates = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
+      buffer = this.getBuffer('vertexCoordinateBuffer'); // Flip y-coordinates because the textures are stored flipped.
+
+      var vertexCoordinates = new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, vertexCoordinates, gl.STATIC_DRAW);
     }
@@ -59359,9 +59357,7 @@ function () {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); // Disable texture filtering.
 
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST); // TODO: Do this some other way. Maybe flip vertex coordinates?
-
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       return texture;
     }
   }, {
@@ -59424,10 +59420,8 @@ function () {
 
       programs.forEach(function (program) {
         gl.useProgram(program.getPointer());
-        program.beforeRender(gl, _this2); // TODO use TRIANGLE_STRIP
-        // https://webglfundamentals.org/webgl/lessons/webgl-points-lines-triangles.html
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        program.beforeRender(gl, _this2);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         program.afterRender(gl, _this2);
       });
     }
@@ -59763,7 +59757,8 @@ function (_Program) {
     key: "setMousePosition",
     value: function setMousePosition(coordinate) {
       // Norm x and y values and prevent webgl coordinate interpolation.
-      this.mousePosition = [(Math.floor(coordinate[0]) + 0.5) / this.dataset.width, (Math.floor(coordinate[1]) + 0.5) / this.dataset.height];
+      // Flip y-coordinates because the webgl textures are flipped, too.
+      this.mousePosition = [(Math.floor(coordinate[0]) + 0.5) / this.dataset.width, 1 - (Math.floor(coordinate[1]) + 0.5) / this.dataset.height];
     }
   }]);
 
