@@ -58890,6 +58890,91 @@ window.Vue.use(__webpack_require__(/*! vue-resource */ "./node_modules/vue-resou
 
 /***/ }),
 
+/***/ "./resources/js/components/colorScale.js":
+/*!***********************************************!*\
+  !*** ./resources/js/components/colorScale.js ***!
+  \***********************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../webgl/programs/colorMaps */ "./resources/js/webgl/programs/colorMaps.js");
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+  template: "\n        <div class=\"color-scale\">\n            <div class=\"fill-top\" :style=\"fillTopStyle\"></div>\n            <canvas ref=\"canvas\" :style=\"canvasStyle\"></canvas>\n            <div class=\"fill-bottom\" :style=\"fillBottomStyle\"></div>\n        </div>\n    ",
+  props: {//
+  },
+  components: {//
+  },
+  data: function data() {
+    return {
+      minIntensity: 0,
+      maxIntensity: 255
+    };
+  },
+  computed: {
+    fillTopStyle: function fillTopStyle() {
+      var height = 255 - this.maxIntensity;
+
+      if (height === 0) {
+        return 'display: none;';
+      }
+
+      return {
+        'background-color': this.getColorScaleColor(255),
+        'border-bottom-color': this.getColorScaleColor(255),
+        height: "".concat(height, "px")
+      };
+    },
+    canvasStyle: function canvasStyle() {
+      return "height: ".concat(this.maxIntensity - this.minIntensity, "px");
+    },
+    fillBottomStyle: function fillBottomStyle() {
+      if (this.minIntensity === 0) {
+        return 'display: none;';
+      }
+
+      return {
+        'background-color': this.getColorScaleColor(0),
+        'border-top-color': this.getColorScaleColor(255),
+        height: "".concat(this.minIntensity, "px")
+      };
+    }
+  },
+  methods: {
+    getColorScaleColor: function getColorScaleColor(i) {
+      return "rgb(".concat(_webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__["FIRE"][i * 3], ", ").concat(_webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__["FIRE"][i * 3 + 1], ", ").concat(_webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__["FIRE"][i * 3 + 2], ")");
+    },
+    updateCanvas: function updateCanvas() {
+      var width = this.canvas.width;
+      var height = this.canvas.height;
+
+      for (var i = 0; i < height; i++) {
+        this.ctx.fillStyle = this.getColorScaleColor(i);
+        this.ctx.fillRect(0, height - i, width, 1);
+      }
+    },
+    updateStretching: function updateStretching(stats) {
+      this.minIntensity = stats.min;
+      this.maxIntensity = stats.max;
+    }
+  },
+  watch: {//
+  },
+  created: function created() {//
+  },
+  mounted: function mounted() {
+    this.canvas = this.$refs.canvas;
+    this.ctx = this.canvas.getContext('2d');
+    this.canvas.width = 1;
+    this.canvas.height = 256;
+    this.updateCanvas();
+  }
+});
+
+/***/ }),
+
 /***/ "./resources/js/components/intensityList.js":
 /*!**************************************************!*\
   !*** ./resources/js/components/intensityList.js ***!
@@ -59057,6 +59142,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
 /* harmony import */ var _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../webgl/programs/PixelVector */ "./resources/js/webgl/programs/PixelVector.js");
 /* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+/* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
+
 
 
 
@@ -59070,7 +59157,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n        </div>\n    ",
+  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n            <color-scale ref=\"colorScale\"></color-scale>\n        </div>\n    ",
   props: {
     dataset: {
       required: true,
@@ -59078,7 +59165,8 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   components: {
-    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__["default"]
+    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__["default"],
+    colorScale: _colorScale__WEBPACK_IMPORTED_MODULE_12__["default"]
   },
   data: function data() {
     return {
@@ -59196,6 +59284,7 @@ __webpack_require__.r(__webpack_exports__);
     render: function render() {
       this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]);
       this.map.render();
+      this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
     },
     updateMousePosition: function updateMousePosition(event) {
       if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {

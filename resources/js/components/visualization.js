@@ -10,6 +10,7 @@ import StretchIntensityProgram from '../webgl/programs/StretchIntensity';
 import ColorMapProgram from '../webgl/programs/ColorMap';
 import PixelVectorProgram from '../webgl/programs/PixelVector';
 import loadingIndicator from './loadingIndicator';
+import colorScale from './colorScale';
 
 export default {
     template: `
@@ -17,6 +18,7 @@ export default {
             <div v-if="!ready" class="loading-overlay">
                 <loading-indicator :size="120" :progress="loaded"></loading-indicator>
             </div>
+            <color-scale ref="colorScale"></color-scale>
         </div>
     `,
     props: {
@@ -27,6 +29,7 @@ export default {
     },
     components: {
         loadingIndicator: loadingIndicator,
+        colorScale: colorScale,
     },
     data () {
         return {
@@ -149,6 +152,7 @@ export default {
                 this.colorMapProgram,
             ]);
             this.map.render();
+            this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
         },
         updateMousePosition(event) {
             if (containsCoordinate(this.extent, event.coordinate)) {

@@ -1412,6 +1412,13 @@ there.
   z-index: 1;
 }
 
+.visualization .color-scale {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  z-index: 1;
+}
+
 .loading-indicator {
   width: 120px;
   height: 120px;
@@ -1443,6 +1450,33 @@ there.
   text-shadow: 0px 0px 1px black;
   text-align: right;
   margin-bottom: 2px;
+}
+
+.color-scale {
+  width: 20px;
+  height: 256px;
+  padding: 1px;
+  background-color: #222;
+  border-radius: 2px;
+  position: relative;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+}
+
+.color-scale canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.color-scale .fill-top {
+  border-bottom: 1px dotted;
+  box-sizing: border-box;
+}
+
+.color-scale .fill-bottom {
+  border-top: 1px dotted;
+  box-sizing: border-box;
 }
 
 body {
