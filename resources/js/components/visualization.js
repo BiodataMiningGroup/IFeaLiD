@@ -147,11 +147,17 @@ export default {
         },
         render() {
             this.handler.render([
-                this.similarityProgram,
-                this.stretchIntensityProgram,
-                this.colorMapProgram,
-            ]);
-            this.map.render();
+                    this.similarityProgram,
+                    this.stretchIntensityProgram,
+                    this.colorMapProgram,
+                ])
+                .then(this.map.render.bind(this.map))
+                .then(this.updateColorScale);
+        },
+        emitPixelVector() {
+            this.$emit('select', this.pixelVectorProgram.getPixelVector());
+        },
+        updateColorScale() {
             this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
         },
         updateMousePosition(event) {
@@ -172,8 +178,8 @@ export default {
                 let newPosition = event.coordinate.map(Math.floor);
                 this.pixelVectorProgram.setMousePosition(newPosition);
                 if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-                    this.handler.renderSync([this.pixelVectorProgram]);
-                    this.$emit('select', this.pixelVectorProgram.getPixelVector());
+                    this.handler.render([this.pixelVectorProgram])
+                        .then(this.emitPixelVector);
                 }
             }
         },

@@ -11,7 +11,6 @@ class WebglError extends Error {}
 export default class Handler {
     constructor(options) {
         this.isReady_ = false;
-        this.renderFrameId_ = null;
         this.canvas_ = options.canvas;
         this.gl_ = this.getWebglContext_(this.canvas_, {
             preserveDrawingBuffer: true,
@@ -33,6 +32,8 @@ export default class Handler {
             framebuffers: {},
             textures: {},
         };
+
+        this.renderPromises_ = {};
 
         this.prepareWebgl_(this.gl_, this.assets_);
     }
@@ -331,7 +332,6 @@ export default class Handler {
     }
 
     renderSync_(gl, programs) {
-        programs = programs || this.programs_;
         programs.forEach((program) => {
             gl.useProgram(program.getPointer());
             program.beforeRender(gl, this);
@@ -464,16 +464,26 @@ export default class Handler {
             throw new WebglError('The tiles must be stored first.');
         }
 
-        this.renderSync_(this.gl_, programs);
+        this.renderSync_(this.gl_, programs || []);
     }
 
     render(programs) {
-        if (!this.renderFrameId_) {
-            this.renderFrameId_ = window.requestAnimationFrame(() => {
-                this.renderSync(programs);
-                this.renderFrameId_ = null;
+        let programsHash = (programs || []).map(function (program) {
+                return program.constructor.name;
+            })
+            .join('-');
+
+        if (!this.renderPromises_[programsHash]) {
+            this.renderPromises_[programsHash] = new Promise((resolve, reject) => {
+                window.requestAnimationFrame(() => {
+                    this.renderSync(programs);
+                    this.renderPromises_[programsHash] = null;
+                    resolve();
+                });
             });
         }
+
+        return this.renderPromises_[programsHash];
     }
 
     destruct() {

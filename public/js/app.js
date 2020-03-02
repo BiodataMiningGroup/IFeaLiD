@@ -59282,8 +59282,12 @@ __webpack_require__.r(__webpack_exports__);
       this.colorMapProgram.link(this.stretchIntensityProgram);
     },
     render: function render() {
-      this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]);
-      this.map.render();
+      this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]).then(this.map.render.bind(this.map)).then(this.updateColorScale);
+    },
+    emitPixelVector: function emitPixelVector() {
+      this.$emit('select', this.pixelVectorProgram.getPixelVector());
+    },
+    updateColorScale: function updateColorScale() {
       this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
     },
     updateMousePosition: function updateMousePosition(event) {
@@ -59306,8 +59310,7 @@ __webpack_require__.r(__webpack_exports__);
         this.pixelVectorProgram.setMousePosition(newPosition);
 
         if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-          this.handler.renderSync([this.pixelVectorProgram]);
-          this.$emit('select', this.pixelVectorProgram.getPixelVector());
+          this.handler.render([this.pixelVectorProgram]).then(this.emitPixelVector);
         }
       }
     },
@@ -59487,7 +59490,6 @@ function () {
     _classCallCheck(this, Handler);
 
     this.isReady_ = false;
-    this.renderFrameId_ = null;
     this.canvas_ = options.canvas;
     this.gl_ = this.getWebglContext_(this.canvas_, {
       preserveDrawingBuffer: true,
@@ -59505,6 +59507,7 @@ function () {
       framebuffers: {},
       textures: {}
     };
+    this.renderPromises_ = {};
     this.prepareWebgl_(this.gl_, this.assets_);
   }
 
@@ -59778,7 +59781,6 @@ function () {
     value: function renderSync_(gl, programs) {
       var _this2 = this;
 
-      programs = programs || this.programs_;
       programs.forEach(function (program) {
         gl.useProgram(program.getPointer());
         program.beforeRender(gl, _this2);
@@ -59924,20 +59926,29 @@ function () {
         throw new WebglError('The tiles must be stored first.');
       }
 
-      this.renderSync_(this.gl_, programs);
+      this.renderSync_(this.gl_, programs || []);
     }
   }, {
     key: "render",
     value: function render(programs) {
       var _this4 = this;
 
-      if (!this.renderFrameId_) {
-        this.renderFrameId_ = window.requestAnimationFrame(function () {
-          _this4.renderSync(programs);
+      var programsHash = (programs || []).map(function (program) {
+        return program.constructor.name;
+      }).join('-');
 
-          _this4.renderFrameId_ = null;
+      if (!this.renderPromises_[programsHash]) {
+        this.renderPromises_[programsHash] = new Promise(function (resolve, reject) {
+          window.requestAnimationFrame(function () {
+            _this4.renderSync(programs);
+
+            _this4.renderPromises_[programsHash] = null;
+            resolve();
+          });
         });
       }
+
+      return this.renderPromises_[programsHash];
     }
   }, {
     key: "destruct",
