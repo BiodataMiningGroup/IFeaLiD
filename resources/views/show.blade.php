@@ -14,16 +14,17 @@
     </div>
     <div class="main">
         <div class="main-content">
-            <div v-if="!ready" class="loading-overlay">
-                <loading-indicator :size="120" :progress="loaded"></loading-indicator>
-            </div>
             <visualization
-                v-bind:handler="handler"
+                ref="visualization"
                 v-bind:dataset="dataset"
+                v-on:select="updatePixelVector"
             ></visualization>
         </div>
         <div class="main-aside">
-
+            <intensity-list
+                ref="intensityList"
+                v-bind:dataset="dataset"
+            ></intensity-list>
         </div>
     </div>
 </div>

@@ -51,18 +51,22 @@ export default class Similarity extends Program {
         gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, this.intensities);
         this.intensityStats.max = 0;
         this.intensityStats.min = 255;
-        for (var i = this.intensities.length - 1; i >= 0; i -= 4) {
+        for (let i = this.intensities.length - 1; i >= 0; i -= 4) {
             this.intensityStats.max = Math.max(this.intensities[i], this.intensityStats.max);
             this.intensityStats.min = Math.min(this.intensities[i], this.intensityStats.min);
         }
     }
 
-    setMousePosition(coordinate) {
-        // Norm x and y values and prevent webgl coordinate interpolation.
+    getMousePosition() {
+        return this.mousePosition;
+    }
+
+    setMousePosition(position) {
+        // Move position to center of pixels.
         // Flip y-coordinates because the webgl textures are flipped, too.
         this.mousePosition = [
-            (Math.floor(coordinate[0]) + 0.5) / this.dataset.width,
-            1 - (Math.floor(coordinate[1]) + 0.5) / this.dataset.height,
+            (position[0] + 0.5) / this.dataset.width,
+            1 - (position[1] + 0.5) / this.dataset.height,
         ];
     }
 

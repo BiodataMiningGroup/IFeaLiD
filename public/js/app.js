@@ -44314,6 +44314,19 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/pixel-vector.fs":
+/*!******************************************************************************************!*\
+  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/pixel-vector.fs ***!
+  \******************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_texture_dimension;\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    float tile_number =\n        floor(\n            (v_texture_position.t * u_texture_dimension + v_texture_position.s)\n            * u_texture_dimension - u_texture_dimension / 2.0\n        );\n    gl_FragColor = texture3D(u_mouse_position, tile_number);\n}\n");
+
+/***/ }),
+
 /***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs":
 /*!***************************************************************************************!*\
   !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs ***!
@@ -58811,7 +58824,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./resources/js/utils.js");
 /* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./webgl/Handler */ "./resources/js/webgl/Handler.js");
 /* harmony import */ var _components_visualization__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/visualization */ "./resources/js/components/visualization.js");
-/* harmony import */ var _components_loadingIndicator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+/* harmony import */ var _components_intensityList__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/intensityList */ "./resources/js/components/intensityList.js");
 var _components;
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -58824,80 +58837,21 @@ __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
 Object(_utils__WEBPACK_IMPORTED_MODULE_0__["mount"])('show-container', new Vue({
   data: {
-    dataset: window.DATASET,
-    handler: null,
-    loaded: 0,
-    ready: false
+    dataset: window.DATASET
   },
   components: (_components = {
     visualization: _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]
-  }, _defineProperty(_components, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]), _defineProperty(_components, "loadingIndicator", _components_loadingIndicator__WEBPACK_IMPORTED_MODULE_3__["default"]), _components),
+  }, _defineProperty(_components, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]), _defineProperty(_components, "intensityList", _components_intensityList__WEBPACK_IMPORTED_MODULE_3__["default"]), _components),
   methods: {
-    fetchImages: function fetchImages() {
-      var _this = this;
-
-      var count = Math.ceil(this.dataset.features / 4);
-      var promises = [];
-      var images = [];
-
-      var _loop = function _loop() {
-        var image = new Image();
-        promises.push(new Promise(function (resolve, reject) {
-          image.addEventListener('error', reject);
-          image.addEventListener('load', function () {
-            resolve(image);
-          });
-        }));
-        images.push(image);
-      };
-
-      while (count--) {
-        _loop();
-      }
-
-      var loadImage = function loadImage() {
-        _this.loaded = 1 - images.length / promises.length;
-
-        if (images.length > 0) {
-          var image = images.pop();
-          var index = images.length;
-          image.addEventListener('load', loadImage);
-          image.src = "".concat(_this.dataset.url, "/").concat(index, ".png");
-        }
-      }; // Load images with multiple parallel connections.
-
-
-      var parallel = 3;
-
-      while (parallel--) {
-        loadImage();
-      }
-
-      return Promise.all(promises);
-    },
-    initializeWebgl: function initializeWebgl() {
-      var canvas = document.createElement('canvas');
-      canvas.width = this.dataset.width;
-      canvas.height = this.dataset.height;
-      this.handler = new _webgl_Handler__WEBPACK_IMPORTED_MODULE_1__["default"]({
-        canvas: canvas,
-        width: this.dataset.width,
-        height: this.dataset.height,
-        depth: this.dataset.features,
-        // Reserve units for the similarity, stretch intensity and color map textures.
-        reservedUnits: 3
-      });
-      window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
-    },
-    setReady: function setReady() {
-      this.ready = true;
+    updatePixelVector: function updatePixelVector(vector) {
+      // Use a method instead of prop because the pixel vector array stays the
+      // same object.
+      this.$refs.intensityList.updatePixelVector(vector);
     }
   },
-  created: function created() {
-    this.initializeWebgl();
+  created: function created() {//
   },
-  mounted: function mounted() {
-    this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.setReady);
+  mounted: function mounted() {//
   }
 }));
 
@@ -58933,6 +58887,90 @@ window.Vue.use(__webpack_require__(/*! vue-resource */ "./node_modules/vue-resou
 //     cluster: process.env.MIX_PUSHER_APP_CLUSTER,
 //     forceTLS: true
 // });
+
+/***/ }),
+
+/***/ "./resources/js/components/intensityList.js":
+/*!**************************************************!*\
+  !*** ./resources/js/components/intensityList.js ***!
+  \**************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../webgl/programs/colorMaps */ "./resources/js/webgl/programs/colorMaps.js");
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+  template: "\n        <div class=\"intensity-list\">\n            <canvas ref=\"canvas\"></canvas>\n        </div>\n    ",
+  props: {
+    dataset: {
+      required: true,
+      type: Object
+    }
+  },
+  components: {//
+  },
+  data: function data() {
+    return {
+      hoverIndex: 0,
+      canvasSize: [0, 0]
+    };
+  },
+  computed: {
+    barHeight: function barHeight() {
+      return this.canvasSize[1] / this.dataset.features;
+    }
+  },
+  methods: {
+    updatePixelVector: function updatePixelVector(pixelVector) {
+      this.pixelVector = pixelVector;
+      this.drawCanvas();
+    },
+    drawCanvas: function drawCanvas() {
+      var ctx = this.ctx;
+      var width = this.canvasSize[0];
+      var height = this.canvasSize[1];
+      var vector = this.pixelVector;
+      var barHeight = this.barHeight;
+      var barWidth = 0;
+      this.canvas.width = width;
+      this.canvas.height = height;
+      ctx.fillStyle = '#ccc';
+      ctx.beginPath();
+      ctx.moveTo(width, 0);
+
+      for (var i = 0; i < height; i++) {
+        barWidth = width * vector[i] / 255;
+        ctx.lineTo(width - barWidth, i * barHeight);
+        ctx.lineTo(width - barWidth, (i + 1) * barHeight);
+      }
+
+      ctx.lineTo(width, height);
+      ctx.fill();
+    },
+    updateCanvasSize: function updateCanvasSize() {
+      this.canvasSize = [this.$el.clientWidth, this.$el.clientHeight];
+    }
+  },
+  watch: {
+    canvasSize: function canvasSize() {
+      this.drawCanvas();
+    }
+  },
+  created: function created() {
+    this.pixelVector = new Uint8Array([]);
+  },
+  mounted: function mounted() {
+    this.canvas = this.$refs.canvas;
+    this.ctx = this.canvas.getContext('2d'); // this.canvas.addEventListener('pointermove', this.updateHoverIndex.bind(this));
+    // window.addEventListener('resize', () => {
+    //     this.$nextTick(this.updateCanvasSize)
+    // });
+
+    this.$nextTick(this.updateCanvasSize);
+  }
+});
 
 /***/ }),
 
@@ -59017,6 +59055,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
 /* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
 /* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
+/* harmony import */ var _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../webgl/programs/PixelVector */ "./resources/js/webgl/programs/PixelVector.js");
+/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+
+
 
 
 
@@ -59028,21 +59070,20 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-  template: "\n        <div class=\"visualization\" ref=\"map\">\n\n        </div>\n    ",
+  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n        </div>\n    ",
   props: {
-    handler: {
-      required: true,
-      type: _webgl_Handler__WEBPACK_IMPORTED_MODULE_6__["default"]
-    },
     dataset: {
       required: true,
       type: Object
     }
   },
-  components: {//
+  components: {
+    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__["default"]
   },
   data: function data() {
-    return {//
+    return {
+      loaded: 0,
+      ready: false
     };
   },
   computed: {
@@ -59051,6 +59092,65 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   methods: {
+    fetchImages: function fetchImages() {
+      var _this = this;
+
+      var count = Math.ceil(this.dataset.features / 4);
+      var promises = [];
+      var images = [];
+
+      var _loop = function _loop() {
+        var image = new Image();
+        promises.push(new Promise(function (resolve, reject) {
+          image.addEventListener('error', reject);
+          image.addEventListener('load', function () {
+            resolve(image);
+          });
+        }));
+        images.push(image);
+      };
+
+      while (count--) {
+        _loop();
+      }
+
+      var loadImage = function loadImage() {
+        _this.loaded = 1 - images.length / promises.length;
+
+        if (images.length > 0) {
+          var image = images.pop();
+          var index = images.length;
+          image.addEventListener('load', loadImage);
+          image.src = "".concat(_this.dataset.url, "/").concat(index, ".png");
+        }
+      }; // Load images with multiple parallel connections.
+
+
+      var parallel = 3;
+
+      while (parallel--) {
+        loadImage();
+      }
+
+      return Promise.all(promises);
+    },
+    initializeCanvas: function initializeCanvas() {
+      var canvas = document.createElement('canvas');
+      canvas.width = this.dataset.width;
+      canvas.height = this.dataset.height;
+      return canvas;
+    },
+    initializeWebgl: function initializeWebgl(canvas) {
+      this.handler = new _webgl_Handler__WEBPACK_IMPORTED_MODULE_6__["default"]({
+        canvas: canvas,
+        width: this.dataset.width,
+        height: this.dataset.height,
+        depth: this.dataset.features,
+        // Reserve units for the similarity, stretch intensity, color map and pixel vector textures.
+        reservedUnits: 4
+      });
+      window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
+    },
     initializeOpenLayers: function initializeOpenLayers(canvas) {
       var projection = new ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__["default"]({
         code: 'image',
@@ -59081,20 +59181,17 @@ __webpack_require__.r(__webpack_exports__);
         padding: [10, 10, 10, 10]
       });
     },
-    initializeWebgl: function initializeWebgl() {
-      var _this = this;
-
+    initializePrograms: function initializePrograms() {
       this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_7__["default"](this.dataset);
       this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_8__["default"](this.dataset);
       this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__["default"]();
+      this.pixelVectorProgram = new _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_10__["default"](this.dataset);
       this.handler.addProgram(this.similarityProgram);
       this.handler.addProgram(this.stretchIntensityProgram);
       this.handler.addProgram(this.colorMapProgram);
+      this.handler.addProgram(this.pixelVectorProgram);
       this.stretchIntensityProgram.link(this.similarityProgram);
       this.colorMapProgram.link(this.stretchIntensityProgram);
-      this.handler.ready().then(this.render).then(function () {
-        _this.map.on('pointermove', _this.updateMousePosition);
-      });
     },
     render: function render() {
       this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]);
@@ -59102,16 +59199,49 @@ __webpack_require__.r(__webpack_exports__);
     },
     updateMousePosition: function updateMousePosition(event) {
       if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {
-        this.similarityProgram.setMousePosition(event.coordinate);
-        this.render();
+        var oldPosition = this.similarityProgram.getMousePosition();
+        var newPosition = event.coordinate.map(Math.floor);
+        this.similarityProgram.setMousePosition(newPosition);
+
+        if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
+          this.render();
+        }
       }
+
+      this.updateMarkerPosition(event);
+    },
+    updateMarkerPosition: function updateMarkerPosition(event) {
+      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {
+        var oldPosition = this.pixelVectorProgram.getMousePosition();
+        var newPosition = event.coordinate.map(Math.floor);
+        this.pixelVectorProgram.setMousePosition(newPosition);
+
+        if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
+          this.handler.renderSync([this.pixelVectorProgram]);
+          this.$emit('select', this.pixelVectorProgram.getPixelVector());
+        }
+      }
+    },
+    setReady: function setReady() {
+      this.ready = true;
     }
+  },
+  watch: {//
   },
   created: function created() {//
   },
   mounted: function mounted() {
-    this.initializeOpenLayers(this.handler.getCanvas());
-    this.initializeWebgl();
+    var _this2 = this;
+
+    var canvas = this.initializeCanvas();
+    this.initializeOpenLayers(canvas);
+    this.initializeWebgl(canvas);
+    this.initializePrograms();
+    this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(this.setReady).then(function () {
+      _this2.map.on('pointermove', _this2.updateMousePosition);
+
+      _this2.map.on('click', _this2.updateMarkerPosition);
+    });
   }
 });
 
@@ -59286,7 +59416,6 @@ function () {
       framebuffers: {},
       textures: {}
     };
-    this.readyPromises_ = [];
     this.prepareWebgl_(this.gl_, this.assets_);
   }
 
@@ -59422,7 +59551,7 @@ function () {
       var tileWidth = numberToFloatString(1 / props.colsPerTexture);
       var tileHeight = numberToFloatString(1 / props.rowsPerTexture);
       output += this.compileSamplerDefinition_();
-      output += "\n        vec4 texture3D(vec2 position, float tileIdx) {\n            float index_on_sampler = mod(tileIdx, ".concat(tilesPerTexture, ");\n            float column = mod(index_on_sampler, ").concat(columns, ");\n            float row = floor(index_on_sampler / ").concat(columns, ");\n            vec2 coords_2d = vec2(\n                ").concat(tileWidth, " * (column + position.x),\n                ").concat(tileHeight, " * (row + positiony)\n            );\n\n            float sampler_index = floor(tileIdx / ").concat(tilesPerTexture, ");\n        ");
+      output += "\n        vec4 texture3D(vec2 position, float tileIdx) {\n            float index_on_sampler = mod(tileIdx, ".concat(tilesPerTexture, ");\n            float column = mod(index_on_sampler, ").concat(columns, ");\n            float row = floor(index_on_sampler / ").concat(columns, ");\n            vec2 coords_2d = vec2(\n                ").concat(tileWidth, " * (column + position.x),\n                ").concat(tileHeight, " * (row + position.y)\n            );\n\n            float sampler_index = floor(tileIdx / ").concat(tilesPerTexture, ");\n        ");
       output += this.compileSamplerQueries_();
       output += "\n            return vec4(0);\n        }\n        ";
       return output;
@@ -59696,13 +59825,8 @@ function () {
   }, {
     key: "storeTiles",
     value: function storeTiles(images) {
-      var _this4 = this;
-
       this.storeTiles_(this.gl_, images, this.dataset_, this.props_);
       this.isReady_ = true;
-      this.readyPromises_.forEach(function (resolve) {
-        resolve(_this4);
-      });
     }
   }, {
     key: "renderSync",
@@ -59716,13 +59840,13 @@ function () {
   }, {
     key: "render",
     value: function render(programs) {
-      var _this5 = this;
+      var _this4 = this;
 
       if (!this.renderFrameId_) {
         this.renderFrameId_ = window.requestAnimationFrame(function () {
-          _this5.renderSync(programs);
+          _this4.renderSync(programs);
 
-          _this5.renderFrameId_ = null;
+          _this4.renderFrameId_ = null;
         });
       }
     }
@@ -59740,20 +59864,6 @@ function () {
     key: "getGl",
     value: function getGl() {
       return this.gl_;
-    }
-  }, {
-    key: "ready",
-    value: function ready() {
-      var _this6 = this;
-
-      var p = new Promise(function (resolve, reject) {
-        if (_this6.isReady_) {
-          resolve(_this6);
-        } else {
-          _this6.readyPromises_.push(resolve);
-        }
-      });
-      return p;
     }
   }]);
 
@@ -59824,6 +59934,7 @@ function (_Program) {
       handler.useVertexPositions(this);
       handler.useTexturePositions(this);
       this.colorMapTexture = handler.getTexture('colorMap');
+      gl.bindTexture(gl.TEXTURE_2D, this.colorMapTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, _colorMaps__WEBPACK_IMPORTED_MODULE_3__["FIRE"]);
       gl.uniform1i(gl.getUniformLocation(pointer, 'u_color_map'), 1);
     }
@@ -59848,6 +59959,128 @@ function (_Program) {
   }]);
 
   return ColorMap;
+}(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
+/***/ "./resources/js/webgl/programs/PixelVector.js":
+/*!****************************************************!*\
+  !*** ./resources/js/webgl/programs/PixelVector.js ***!
+  \****************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return PixelVector; });
+/* harmony import */ var _Program__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Program */ "./resources/js/webgl/programs/Program.js");
+/* harmony import */ var raw_loader_shaders_pixel_vector_fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/pixel-vector.fs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/pixel-vector.fs");
+/* harmony import */ var raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.vs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs");
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+
+var PixelVector =
+/*#__PURE__*/
+function (_Program) {
+  _inherits(PixelVector, _Program);
+
+  function PixelVector(dataset) {
+    var _this;
+
+    _classCallCheck(this, PixelVector);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(PixelVector).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_pixel_vector_fs__WEBPACK_IMPORTED_MODULE_1__["default"])); // Dimension of a square texture that can contain all values of the pixel vector.
+
+    _this.textureDimension = Math.ceil(Math.sqrt(Math.ceil(dataset.features / 4)));
+    _this.texture = null;
+    _this.inputTexture = null;
+    _this.mousePosition = [0, 0];
+    _this.mousePositionPointer = null;
+    _this.dataset = dataset;
+    _this.framebuffer = null;
+    _this.pixelVector = new Uint8Array(_this.textureDimension * _this.textureDimension * 4);
+    return _this;
+  }
+
+  _createClass(PixelVector, [{
+    key: "initialize",
+    value: function initialize(gl, handler) {
+      var pointer = this.getPointer();
+      handler.useVertexPositions(this);
+      handler.useTexturePositions(this);
+      handler.useTextures(this);
+      this.mousePositionPointer = gl.getUniformLocation(pointer, 'u_mouse_position');
+      var texture_dimension = gl.getUniformLocation(pointer, 'u_texture_dimension');
+      gl.uniform1f(texture_dimension, this.textureDimension);
+      this.framebuffer = handler.getFramebuffer('pixelVector');
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+      this.texture = handler.getTexture('pixelVector');
+      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureDimension, this.textureDimension, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+  }, {
+    key: "beforeRender",
+    value: function beforeRender(gl, handler) {
+      gl.viewport(0, 0, this.textureDimension, this.textureDimension);
+      gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[1]);
+      handler.bindTextures();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    }
+  }, {
+    key: "afterRender",
+    value: function afterRender(gl, handler) {
+      gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.UNSIGNED_BYTE, this.pixelVector);
+      gl.viewport(0, 0, this.dataset.width, this.dataset.height);
+    }
+  }, {
+    key: "link",
+    value: function link(program) {
+      this.inputTexture = program.getOutputTexture();
+    }
+  }, {
+    key: "getMousePosition",
+    value: function getMousePosition() {
+      return this.mousePosition;
+    }
+  }, {
+    key: "setMousePosition",
+    value: function setMousePosition(position) {
+      // Move position to center of pixels.
+      // Flip y-coordinates because the webgl textures are flipped, too.
+      this.mousePosition = [(position[0] + 0.5) / this.dataset.width, 1 - (position[1] + 0.5) / this.dataset.height];
+    }
+  }, {
+    key: "getPixelVector",
+    value: function getPixelVector() {
+      return this.pixelVector;
+    }
+  }]);
+
+  return PixelVector;
 }(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
 
 
@@ -59995,6 +60228,7 @@ function (_Program) {
       this.framebuffer = handler.getFramebuffer('similarity');
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.outputTexture = handler.getTexture('similarity');
+      gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
@@ -60020,11 +60254,16 @@ function (_Program) {
       }
     }
   }, {
+    key: "getMousePosition",
+    value: function getMousePosition() {
+      return this.mousePosition;
+    }
+  }, {
     key: "setMousePosition",
-    value: function setMousePosition(coordinate) {
-      // Norm x and y values and prevent webgl coordinate interpolation.
+    value: function setMousePosition(position) {
+      // Move position to center of pixels.
       // Flip y-coordinates because the webgl textures are flipped, too.
-      this.mousePosition = [(Math.floor(coordinate[0]) + 0.5) / this.dataset.width, 1 - (Math.floor(coordinate[1]) + 0.5) / this.dataset.height];
+      this.mousePosition = [(position[0] + 0.5) / this.dataset.width, 1 - (position[1] + 0.5) / this.dataset.height];
     }
   }, {
     key: "getOutputTexture",
@@ -60111,6 +60350,7 @@ function (_Program) {
       this.framebuffer = handler.getFramebuffer('stretchIntensity');
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.outputTexture = handler.getTexture('stretchIntensity');
+      gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);

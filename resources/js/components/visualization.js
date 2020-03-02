@@ -8,29 +8,30 @@ import WebglHandler from '../webgl/Handler';
 import SimilarityProgram from '../webgl/programs/Similarity';
 import StretchIntensityProgram from '../webgl/programs/StretchIntensity';
 import ColorMapProgram from '../webgl/programs/ColorMap';
+import PixelVectorProgram from '../webgl/programs/PixelVector';
+import loadingIndicator from './loadingIndicator';
 
 export default {
     template: `
         <div class="visualization" ref="map">
-
+            <div v-if="!ready" class="loading-overlay">
+                <loading-indicator :size="120" :progress="loaded"></loading-indicator>
+            </div>
         </div>
     `,
     props: {
-        handler: {
-            required: true,
-            type: WebglHandler,
-        },
         dataset: {
             required: true,
             type: Object,
         },
     },
     components: {
-        //
+        loadingIndicator: loadingIndicator,
     },
     data () {
         return {
-            //
+            loaded: 0,
+            ready: false,
         };
     },
     computed: {
@@ -39,6 +40,59 @@ export default {
         },
     },
     methods: {
+        fetchImages() {
+            let count = Math.ceil(this.dataset.features / 4);
+            let promises = [];
+            let images = [];
+
+            while (count--) {
+                let image = new Image();
+                promises.push(new Promise(function (resolve, reject) {
+                    image.addEventListener('error', reject);
+                    image.addEventListener('load', function () {
+                        resolve(image);
+                    });
+                }))
+                images.push(image);
+            }
+
+            let loadImage = () => {
+                this.loaded = 1 - (images.length / promises.length);
+                if (images.length > 0) {
+                    let image = images.pop();
+                    let index = images.length;
+                    image.addEventListener('load', loadImage);
+                    image.src = `${this.dataset.url}/${index}.png`;
+                }
+            };
+
+            // Load images with multiple parallel connections.
+            let parallel = 3;
+            while (parallel--) {
+                loadImage();
+            }
+
+            return Promise.all(promises);
+        },
+        initializeCanvas() {
+            let canvas = document.createElement('canvas');
+            canvas.width = this.dataset.width;
+            canvas.height = this.dataset.height;
+
+            return canvas;
+        },
+        initializeWebgl(canvas) {
+            this.handler = new WebglHandler({
+                canvas: canvas,
+                width: this.dataset.width,
+                height: this.dataset.height,
+                depth: this.dataset.features,
+                // Reserve units for the similarity, stretch intensity, color map and pixel vector textures.
+                reservedUnits: 4,
+            });
+
+            window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
+        },
         initializeOpenLayers(canvas) {
             let projection = new Projection({
                 code: 'image',
@@ -75,24 +129,18 @@ export default {
                 padding: [10, 10, 10, 10],
             });
         },
-
-        initializeWebgl() {
+        initializePrograms() {
             this.similarityProgram = new SimilarityProgram(this.dataset);
             this.stretchIntensityProgram = new StretchIntensityProgram(this.dataset);
             this.colorMapProgram = new ColorMapProgram();
+            this.pixelVectorProgram = new PixelVectorProgram(this.dataset);
             this.handler.addProgram(this.similarityProgram);
             this.handler.addProgram(this.stretchIntensityProgram);
             this.handler.addProgram(this.colorMapProgram);
+            this.handler.addProgram(this.pixelVectorProgram);
 
             this.stretchIntensityProgram.link(this.similarityProgram);
             this.colorMapProgram.link(this.stretchIntensityProgram);
-
-
-            this.handler.ready()
-                .then(this.render)
-                .then(() => {
-                    this.map.on('pointermove', this.updateMousePosition);
-                });
         },
         render() {
             this.handler.render([
@@ -104,16 +152,49 @@ export default {
         },
         updateMousePosition(event) {
             if (containsCoordinate(this.extent, event.coordinate)) {
-                this.similarityProgram.setMousePosition(event.coordinate);
-                this.render();
+                let oldPosition = this.similarityProgram.getMousePosition();
+                let newPosition = event.coordinate.map(Math.floor);
+                this.similarityProgram.setMousePosition(newPosition);
+                if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
+                    this.render();
+                }
+            }
+
+            this.updateMarkerPosition(event);
+        },
+        updateMarkerPosition(event) {
+            if (containsCoordinate(this.extent, event.coordinate)) {
+                let oldPosition = this.pixelVectorProgram.getMousePosition();
+                let newPosition = event.coordinate.map(Math.floor);
+                this.pixelVectorProgram.setMousePosition(newPosition);
+                if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
+                    this.handler.renderSync([this.pixelVectorProgram]);
+                    this.$emit('select', this.pixelVectorProgram.getPixelVector());
+                }
             }
         },
+        setReady() {
+            this.ready = true;
+        },
+    },
+    watch: {
+        //
     },
     created() {
         //
     },
     mounted() {
-        this.initializeOpenLayers(this.handler.getCanvas());
-        this.initializeWebgl();
+        let canvas = this.initializeCanvas();
+        this.initializeOpenLayers(canvas);
+        this.initializeWebgl(canvas);
+        this.initializePrograms();
+        this.fetchImages()
+            .then(this.handler.storeTiles.bind(this.handler))
+            .then(this.render)
+            .then(this.setReady)
+            .then(() => {
+                this.map.on('pointermove', this.updateMousePosition);
+                this.map.on('click', this.updateMarkerPosition);
+            });
     },
 };

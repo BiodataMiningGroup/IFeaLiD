@@ -34,8 +34,6 @@ export default class Handler {
             textures: {},
         };
 
-        this.readyPromises_ = [];
-
         this.prepareWebgl_(this.gl_, this.assets_);
     }
 
@@ -187,7 +185,7 @@ export default class Handler {
             float row = floor(index_on_sampler / ${columns});
             vec2 coords_2d = vec2(
                 ${tileWidth} * (column + position.x),
-                ${tileHeight} * (row + positiony)
+                ${tileHeight} * (row + position.y)
             );
 
             float sampler_index = floor(tileIdx / ${tilesPerTexture});
@@ -459,9 +457,6 @@ export default class Handler {
     storeTiles(images) {
         this.storeTiles_(this.gl_, images, this.dataset_, this.props_);
         this.isReady_ = true;
-        this.readyPromises_.forEach((resolve) => {
-            resolve(this);
-        });
     }
 
     renderSync(programs) {
@@ -491,17 +486,5 @@ export default class Handler {
 
     getGl() {
         return this.gl_;
-    }
-
-    ready() {
-        let p = new Promise((resolve, reject) => {
-            if (this.isReady_) {
-                resolve(this);
-            } else {
-                this.readyPromises_.push(resolve);
-            }
-        });
-
-        return p;
     }
 }
