@@ -17,6 +17,7 @@ export default class ColorMap extends Program {
         handler.useTexturePositions(this);
 
         this.colorMapTexture = handler.getTexture('colorMap');
+        gl.bindTexture(gl.TEXTURE_2D, this.colorMapTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, FIRE);
         gl.uniform1i(gl.getUniformLocation(pointer, 'u_color_map'), 1);
     }

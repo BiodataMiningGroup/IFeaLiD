@@ -34,6 +34,7 @@ export default class Similarity extends Program {
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
         this.outputTexture = handler.getTexture('similarity');
+        gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
         gl.bindTexture(gl.TEXTURE_2D, null);
