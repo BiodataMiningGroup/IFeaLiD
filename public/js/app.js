@@ -58809,23 +58809,95 @@ module.exports = g;
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./resources/js/utils.js");
-/* harmony import */ var _components_visualization__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/visualization */ "./resources/js/components/visualization.js");
+/* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./webgl/Handler */ "./resources/js/webgl/Handler.js");
+/* harmony import */ var _components_visualization__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/visualization */ "./resources/js/components/visualization.js");
+/* harmony import */ var _components_loadingIndicator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+var _components;
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
 
 
+
+
 Object(_utils__WEBPACK_IMPORTED_MODULE_0__["mount"])('show-container', new Vue({
   data: {
-    dataset: window.DATASET
+    dataset: window.DATASET,
+    handler: null,
+    loaded: 0,
+    ready: false
   },
-  components: _defineProperty({
-    visualization: _components_visualization__WEBPACK_IMPORTED_MODULE_1__["default"]
-  }, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_1__["default"]),
-  methods: {//
+  components: (_components = {
+    visualization: _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]
+  }, _defineProperty(_components, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]), _defineProperty(_components, "loadingIndicator", _components_loadingIndicator__WEBPACK_IMPORTED_MODULE_3__["default"]), _components),
+  methods: {
+    fetchImages: function fetchImages() {
+      var _this = this;
+
+      var count = Math.ceil(this.dataset.features / 4);
+      var promises = [];
+      var images = [];
+
+      var _loop = function _loop() {
+        var image = new Image();
+        promises.push(new Promise(function (resolve, reject) {
+          image.addEventListener('error', reject);
+          image.addEventListener('load', function () {
+            resolve(image);
+          });
+        }));
+        images.push(image);
+      };
+
+      while (count--) {
+        _loop();
+      }
+
+      var loadImage = function loadImage() {
+        _this.loaded = 1 - images.length / promises.length;
+
+        if (images.length > 0) {
+          var image = images.pop();
+          var index = images.length;
+          image.addEventListener('load', loadImage);
+          image.src = "".concat(_this.dataset.url, "/").concat(index, ".png");
+        }
+      }; // Load images with multiple parallel connections.
+
+
+      var parallel = 3;
+
+      while (parallel--) {
+        loadImage();
+      }
+
+      return Promise.all(promises);
+    },
+    initializeWebgl: function initializeWebgl() {
+      var canvas = document.createElement('canvas');
+      canvas.width = this.dataset.width;
+      canvas.height = this.dataset.height;
+      this.handler = new _webgl_Handler__WEBPACK_IMPORTED_MODULE_1__["default"]({
+        canvas: canvas,
+        width: this.dataset.width,
+        height: this.dataset.height,
+        depth: this.dataset.features,
+        // Reserve units for the similarity, stretch intensity and color map textures.
+        reservedUnits: 3
+      });
+      window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
+    },
+    setReady: function setReady() {
+      this.ready = true;
+    }
   },
-  created: function created() {//
+  created: function created() {
+    this.initializeWebgl();
+  },
+  mounted: function mounted() {
+    this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.setReady);
   }
 }));
 
@@ -58940,13 +59012,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _ol_source_Canvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../ol/source/Canvas */ "./resources/js/ol/source/Canvas.js");
 /* harmony import */ var ol_source_ImageStatic__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ol/source/ImageStatic */ "./node_modules/ol/source/ImageStatic.js");
 /* harmony import */ var ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ol/proj/Projection */ "./node_modules/ol/proj/Projection.js");
-/* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../webgl/Handler */ "./resources/js/webgl/Handler.js");
-/* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
-/* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
-/* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
-/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
-/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
-
+/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
+/* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../webgl/Handler */ "./resources/js/webgl/Handler.js");
+/* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
+/* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
+/* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
 
 
 
@@ -58958,20 +59028,21 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n        </div>\n    ",
+  template: "\n        <div class=\"visualization\" ref=\"map\">\n\n        </div>\n    ",
   props: {
+    handler: {
+      required: true,
+      type: _webgl_Handler__WEBPACK_IMPORTED_MODULE_6__["default"]
+    },
     dataset: {
       required: true,
       type: Object
     }
   },
-  components: {
-    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_10__["default"]
+  components: {//
   },
   data: function data() {
-    return {
-      loaded: 0,
-      ready: false
+    return {//
     };
   },
   computed: {
@@ -58980,19 +59051,14 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   methods: {
-    initializeCanvas: function initializeCanvas() {
-      this.canvas = document.createElement('canvas');
-      this.canvas.width = this.dataset.width;
-      this.canvas.height = this.dataset.height;
-    },
-    initializeOpenLayers: function initializeOpenLayers() {
+    initializeOpenLayers: function initializeOpenLayers(canvas) {
       var projection = new ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__["default"]({
         code: 'image',
         units: 'pixels',
         extent: this.extent
       });
       this.canvasSource = new _ol_source_Canvas__WEBPACK_IMPORTED_MODULE_2__["default"]({
-        canvas: this.canvas,
+        canvas: canvas,
         projection: projection,
         imageExtent: this.extent
       });
@@ -59015,91 +59081,36 @@ __webpack_require__.r(__webpack_exports__);
         padding: [10, 10, 10, 10]
       });
     },
-    fetchImages: function fetchImages() {
+    initializeWebgl: function initializeWebgl() {
       var _this = this;
 
-      var count = Math.ceil(this.dataset.features / 4);
-      var promises = [];
-      var images = [];
-
-      var _loop = function _loop() {
-        var image = new Image();
-        promises.push(new Promise(function (resolve, reject) {
-          image.addEventListener('error', reject);
-          image.addEventListener('load', function () {
-            resolve(image);
-          });
-        }));
-        images.push(image);
-      };
-
-      while (count--) {
-        _loop();
-      }
-
-      var loadImage = function loadImage() {
-        _this.loaded = 1 - images.length / promises.length;
-
-        if (images.length > 0) {
-          var image = images.pop();
-          var index = images.length;
-          image.addEventListener('load', loadImage);
-          image.src = "".concat(_this.dataset.url, "/").concat(index, ".png");
-        }
-      }; // Load images with multiple parallel connections.
-
-
-      var parallel = 3;
-
-      while (parallel--) {
-        loadImage();
-      }
-
-      return Promise.all(promises);
-    },
-    initializeWebgl: function initializeWebgl() {
-      var _this2 = this;
-
-      this.handler = new _webgl_Handler__WEBPACK_IMPORTED_MODULE_5__["default"]({
-        canvas: this.canvas,
-        width: this.dataset.width,
-        height: this.dataset.height,
-        depth: this.dataset.features,
-        // Reserve units for the similarity, stretch intensity and color map textures.
-        reservedUnits: 3
-      });
-      window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
-      this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_6__["default"](this.dataset);
-      this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_7__["default"](this.dataset);
-      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_8__["default"]();
+      this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_7__["default"](this.dataset);
+      this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_8__["default"](this.dataset);
+      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__["default"]();
       this.handler.addProgram(this.similarityProgram);
       this.handler.addProgram(this.stretchIntensityProgram);
       this.handler.addProgram(this.colorMapProgram);
       this.stretchIntensityProgram.link(this.similarityProgram);
       this.colorMapProgram.link(this.stretchIntensityProgram);
-      this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(this.setReady).then(function () {
-        _this2.map.on('pointermove', _this2.updateMousePosition);
+      this.handler.ready().then(this.render).then(function () {
+        _this.map.on('pointermove', _this.updateMousePosition);
       });
     },
     render: function render() {
-      this.handler.render();
+      this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]);
       this.map.render();
     },
     updateMousePosition: function updateMousePosition(event) {
-      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_9__["containsCoordinate"])(this.extent, event.coordinate)) {
+      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {
         this.similarityProgram.setMousePosition(event.coordinate);
         this.render();
       }
-    },
-    setReady: function setReady() {
-      this.ready = true;
     }
   },
   created: function created() {//
   },
   mounted: function mounted() {
-    this.initializeCanvas();
-    this.initializeOpenLayers();
+    this.initializeOpenLayers(this.handler.getCanvas());
     this.initializeWebgl();
   }
 });
@@ -59256,7 +59267,7 @@ function () {
   function Handler(options) {
     _classCallCheck(this, Handler);
 
-    this.ready = false;
+    this.isReady_ = false;
     this.renderFrameId_ = null;
     this.canvas_ = options.canvas;
     this.gl_ = this.getWebglContext_(this.canvas_, {
@@ -59275,6 +59286,7 @@ function () {
       framebuffers: {},
       textures: {}
     };
+    this.readyPromises_ = [];
     this.prepareWebgl_(this.gl_, this.assets_);
   }
 
@@ -59684,13 +59696,18 @@ function () {
   }, {
     key: "storeTiles",
     value: function storeTiles(images) {
+      var _this4 = this;
+
       this.storeTiles_(this.gl_, images, this.dataset_, this.props_);
-      this.ready = true;
+      this.isReady_ = true;
+      this.readyPromises_.forEach(function (resolve) {
+        resolve(_this4);
+      });
     }
   }, {
     key: "renderSync",
     value: function renderSync(programs) {
-      if (!this.ready) {
+      if (!this.isReady_) {
         throw new WebglError('The tiles must be stored first.');
       }
 
@@ -59699,13 +59716,13 @@ function () {
   }, {
     key: "render",
     value: function render(programs) {
-      var _this4 = this;
+      var _this5 = this;
 
       if (!this.renderFrameId_) {
         this.renderFrameId_ = window.requestAnimationFrame(function () {
-          _this4.renderSync(programs);
+          _this5.renderSync(programs);
 
-          _this4.renderFrameId_ = null;
+          _this5.renderFrameId_ = null;
         });
       }
     }
@@ -59713,6 +59730,30 @@ function () {
     key: "destruct",
     value: function destruct() {
       this.destruct_(this.gl_, this.assets_, this.programs_, this.canvas_);
+    }
+  }, {
+    key: "getCanvas",
+    value: function getCanvas() {
+      return this.canvas_;
+    }
+  }, {
+    key: "getGl",
+    value: function getGl() {
+      return this.gl_;
+    }
+  }, {
+    key: "ready",
+    value: function ready() {
+      var _this6 = this;
+
+      var p = new Promise(function (resolve, reject) {
+        if (_this6.isReady_) {
+          resolve(_this6);
+        } else {
+          _this6.readyPromises_.push(resolve);
+        }
+      });
+      return p;
     }
   }]);
 

@@ -14,7 +14,11 @@
     </div>
     <div class="main">
         <div class="main-content">
+            <div v-if="!ready" class="loading-overlay">
+                <loading-indicator :size="120" :progress="loaded"></loading-indicator>
+            </div>
             <visualization
+                v-bind:handler="handler"
                 v-bind:dataset="dataset"
             ></visualization>
         </div>

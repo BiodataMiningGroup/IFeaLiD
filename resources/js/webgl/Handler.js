@@ -10,7 +10,7 @@ class WebglError extends Error {}
 
 export default class Handler {
     constructor(options) {
-        this.ready = false;
+        this.isReady_ = false;
         this.renderFrameId_ = null;
         this.canvas_ = options.canvas;
         this.gl_ = this.getWebglContext_(this.canvas_, {
@@ -33,6 +33,8 @@ export default class Handler {
             framebuffers: {},
             textures: {},
         };
+
+        this.readyPromises_ = [];
 
         this.prepareWebgl_(this.gl_, this.assets_);
     }
@@ -456,11 +458,14 @@ export default class Handler {
 
     storeTiles(images) {
         this.storeTiles_(this.gl_, images, this.dataset_, this.props_);
-        this.ready = true;
+        this.isReady_ = true;
+        this.readyPromises_.forEach((resolve) => {
+            resolve(this);
+        });
     }
 
     renderSync(programs) {
-        if (!this.ready) {
+        if (!this.isReady_) {
             throw new WebglError('The tiles must be stored first.');
         }
 
@@ -478,5 +483,25 @@ export default class Handler {
 
     destruct() {
         this.destruct_(this.gl_, this.assets_, this.programs_, this.canvas_);
+    }
+
+    getCanvas() {
+        return this.canvas_;
+    }
+
+    getGl() {
+        return this.gl_;
+    }
+
+    ready() {
+        let p = new Promise((resolve, reject) => {
+            if (this.isReady_) {
+                resolve(this);
+            } else {
+                this.readyPromises_.push(resolve);
+            }
+        });
+
+        return p;
     }
 }
