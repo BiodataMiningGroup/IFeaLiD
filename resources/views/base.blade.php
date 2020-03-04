@@ -9,7 +9,7 @@
         <link rel="stylesheet" href="{{ asset('css/app.css') }}">
         <link rel="icon" type="image/svg" href="{{ asset('logo.svg') }}">
     </head>
-    <body>
+    <body class="bg-dark">
         @yield('content')
         <script type="text/javascript" src="{{asset('js/app.js')}}"></script>
         <script type="text/javascript">

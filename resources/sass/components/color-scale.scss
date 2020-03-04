@@ -2,10 +2,10 @@
     width: 20px;
     height: 256px;
     padding: 1px;
-    background-color: #222;
+    background-color: $dark;
     border-radius: 2px;
     position: relative;
-    border: 1px solid black;
+    border: 1px solid $gray-900;
     display: flex;
     flex-direction: column;
 

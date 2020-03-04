@@ -1,37 +1,14 @@
-@use 'normalize';
-@use 'skeleton';
-@use '../../node_modules/ol/ol';
 
 $primary: #fc6600;
-$secondary: #ffd700;
-$tertiary: #9f00b7;
+// $secondary: #ffd700;
+// $tertiary: #9f00b7;
 
-$success: #5cb85c;
-$info: #5bc0de;
-$warning: #f0ad4e;
-$danger: #d9534f;
-
+@import 'bootstrap';
+@import 'ol';
 @import 'components/visualization';
 @import 'components/loading-indicator';
-@import 'components/intensity-list';
+@import 'components/pixel-vector-display';
 @import 'components/color-scale';
-
-body {
-    background-color: #222;
-    color: #ccc;
-}
-
-.logo {
-    img {
-        vertical-align: middle;
-    }
-}
-
-.button {
-    color: #ccc !important;
-    max-height: 100%;
-    line-height: inherit;
-}
 
 .home-container {
     width: 100vw;
@@ -53,34 +30,8 @@ body {
     display: flex;
     flex-direction: column;
 
-    .header {
-        display: flex;
-        padding: 10px;
-        align-items: stretch;
-        height: 30px;
-        border-bottom: 1px solid black;
-        position: relative;
-
-        .logo {
-            display: inline-flex;
-            align-items: center;
-            height: 100%;
-            box-sizing: border-box;
-            color: #999;
-
-            img {
-                max-height: 100%;
-                margin-right: 10px;
-            }
-        }
-
-        .title {
-            flex: 1;
-            display: inline-flex;
-            align-items: center;
-            margin-left: 20px;
-            font-weight: bold;
-        }
+    .navbar {
+        border-bottom: 1px solid $gray-900;
     }
 
     .main {
@@ -101,7 +52,7 @@ body {
     .main-aside {
         height: 100%;
         width: 200px;
-        border-left: 1px solid black;
+        border-left: 1px solid $gray-900;
         position: relative;
         overflow: hidden;
         padding: 10px 0;
