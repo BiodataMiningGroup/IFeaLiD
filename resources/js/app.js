@@ -2,7 +2,7 @@ require('./bootstrap');
 import {mount} from './utils';
 import WebglHandler from './webgl/Handler';
 import visualization from './components/visualization';
-import intensityList from './components/intensityList';
+import pixelVectorDisplay from './components/pixelVectorDisplay';
 
 mount('show-container', new Vue({
     data: {
@@ -10,13 +10,13 @@ mount('show-container', new Vue({
     },
     components: {
         visualization, visualization,
-        intensityList: intensityList,
+        pixelVectorDisplay: pixelVectorDisplay,
     },
     methods: {
         updatePixelVector(vector) {
             // Use a method instead of prop because the pixel vector array stays the
             // same object.
-            this.$refs.intensityList.updatePixelVector(vector);
+            this.$refs.pixelVectorDisplay.updatePixelVector(vector);
         },
     },
     created() {

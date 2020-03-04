@@ -44323,7 +44323,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_texture_dimension;\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    float tile_number =\n        floor(\n            (v_texture_position.t * u_texture_dimension + v_texture_position.s)\n            * u_texture_dimension - u_texture_dimension / 2.0\n        );\n    gl_FragColor = texture3D(u_mouse_position, tile_number);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_texture_dimension;\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    // Texture coordinates are in [0, 1] and mark the center of a pixel of the texture.\n    // Multiply with u_texture_dimension to get the pixel coordinates and use floor()\n    // to shift the coordinates to the left corner of the pixel.\n    float tile_number = floor(v_texture_position.t * u_texture_dimension) * u_texture_dimension + floor(v_texture_position.s * u_texture_dimension);\n\n    gl_FragColor = texture3D(u_mouse_position, tile_number);\n}\n");
 
 /***/ }),
 
@@ -44336,7 +44336,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("attribute vec2 a_vertex_position;\nattribute vec2 a_texture_position;\nvarying vec2 v_texture_position;\n\nvoid main() {\n    gl_Position = vec4(a_vertex_position, 0, 1);\n    v_texture_position = a_texture_position;\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nattribute vec2 a_vertex_position;\nattribute vec2 a_texture_position;\nvarying vec2 v_texture_position;\n\nvoid main() {\n    gl_Position = vec4(a_vertex_position, 0, 1);\n    v_texture_position = a_texture_position;\n}\n");
 
 /***/ }),
 
@@ -44349,7 +44349,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_normalization;\n\n//uniform float u_channel_mask_dimension;\n//uniform float u_inv_channel_mask_dimension;\n\n//uniform sampler2D u_channel_mask;\n//uniform sampler2D u_region_mask;\n\nconst vec4 ONES = vec4(1);\nconst vec4 ZEROS = vec4(0);\n\n<%=SAMPLER_DEFINITION=%>\n\nvoid main() {\n    // if masked by the region mask, don't do anything\n    /*\n    if (texture2D(u_region_mask, v_texture_position).a == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n    */\n\n    // angle between the two vectors\n    // <A,B> = ||A|| * ||B|| * cos(angle)\n    // => angle = acos(<A,B>/(||A||*||B||))\n    float angle = 0.0;\n\n    // cummulating the squared length of this pixels vector\n    float currentLength = 0.0;\n    // cummulating the squared length of the sample pixels vector\n    float sampleLength = 0.0;\n\n    // temporary texture values of current position\n    vec4 current;\n    // temporary texture values of sample position\n    vec4 sample;\n\n    // the index of the current tile\n    float tile;\n    // the texture position on the channel mask of the current tile\n    // vec2 mask_position = vec2(0);\n    // the channel mask of the current tile\n    // vec4 channel_mask;\n\n    // the row-major index of the current tile on it's texture\n    float index_on_sampler;\n    // the column in which the current tile lies on the texture\n    float column;\n    // the row in which the current tile lies on the texture\n    float row;\n    // the index of the texture, the current tile is on\n    float sampler_index;\n\n    // the 2d coordinates of the current position on the correct texture\n    vec2 coords_2d_current;\n    // the 2d coordinates of the sample position on the correct texture\n    vec2 coords_2d_sample;\n\n    for (int i = 0; i < <%=TILES=%>; i++) {\n        tile = float(i);\n        /*\n        mask_position.s = mod(tile, u_channel_mask_dimension);\n        mask_position.t = floor(tile * u_inv_channel_mask_dimension);\n        mask_position *= u_inv_channel_mask_dimension;\n        channel_mask = texture2D(u_channel_mask, mask_position);\n        */\n\n        // check if any channels of this tile are to be computed\n        //if (dot(channel_mask, ONES) == 0.0) continue;\n\n        index_on_sampler = mod(tile, <%=TILES_PER_TEXTURE=%>);\n        column = mod(index_on_sampler, <%=TILE_COLUMNS=%>);\n        row = floor(index_on_sampler / <%=TILE_COLUMNS=%>);\n\n        coords_2d_sample = vec2(\n            <%=TILE_WIDTH=%> * (column + u_mouse_position.x),\n            <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)\n        );\n\n        coords_2d_current = vec2(\n            <%=TILE_WIDTH=%> * (column + v_texture_position.x),\n            <%=TILE_HEIGHT=%> * (row + v_texture_position.y)\n        );\n\n        // needed for DYNAMIC_SAMPLER_QUERIES\n        sampler_index = floor(tile / <%=TILES_PER_TEXTURE=%>);\n\n        // get rgba of the pixel to compare; filtered by the channel mask and\n        // get rgba of the position of this pixel; filtered by the channel mask\n        <%=DYNAMIC_SAMPLER_QUERIES\n        //sample = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        //current = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_current);\n        sample = texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        current = texture2D(<%=SAMPLER=%>, coords_2d_current);\n        =%>\n\n        currentLength += dot(current, current);\n        sampleLength += dot(sample, sample);\n        angle += dot(current, sample);\n    }\n\n    // if the intensities of this fragment are all 0, don't draw it\n    if (currentLength == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n\n    angle *= inversesqrt(currentLength * sampleLength);\n\n    // Normalize and clip angle to [0, 1].\n    angle = acos(angle) * u_normalization;\n    angle = min(1.0, max(0.0, angle));\n\n    // Invert angle because a lower angle should signify a higher similarity.\n    angle = 1.0 - angle;\n\n    gl_FragColor = vec4(angle);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_normalization;\n\n//uniform float u_channel_mask_dimension;\n//uniform float u_inv_channel_mask_dimension;\n\n//uniform sampler2D u_channel_mask;\n//uniform sampler2D u_region_mask;\n\nconst vec4 ONES = vec4(1);\nconst vec4 ZEROS = vec4(0);\n\n<%=SAMPLER_DEFINITION=%>\n\nvoid main() {\n    // if masked by the region mask, don't do anything\n    /*\n    if (texture2D(u_region_mask, v_texture_position).a == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n    */\n\n    // angle between the two vectors\n    // <A,B> = ||A|| * ||B|| * cos(angle)\n    // => angle = acos(<A,B>/(||A||*||B||))\n    float angle = 0.0;\n\n    // cummulating the squared length of this pixels vector\n    float currentLength = 0.0;\n    // cummulating the squared length of the sample pixels vector\n    float sampleLength = 0.0;\n\n    // temporary texture values of current position\n    vec4 current;\n    // temporary texture values of sample position\n    vec4 sample;\n\n    // the index of the current tile\n    float tile;\n    // the texture position on the channel mask of the current tile\n    // vec2 mask_position = vec2(0);\n    // the channel mask of the current tile\n    // vec4 channel_mask;\n\n    // the row-major index of the current tile on it's texture\n    float index_on_sampler;\n    // the column in which the current tile lies on the texture\n    float column;\n    // the row in which the current tile lies on the texture\n    float row;\n    // the index of the texture, the current tile is on\n    float sampler_index;\n\n    // the 2d coordinates of the current position on the correct texture\n    vec2 coords_2d_current;\n    // the 2d coordinates of the sample position on the correct texture\n    vec2 coords_2d_sample;\n\n    for (int i = 0; i < <%=TILES=%>; i++) {\n        tile = float(i);\n        /*\n        mask_position.s = mod(tile, u_channel_mask_dimension);\n        mask_position.t = floor(tile * u_inv_channel_mask_dimension);\n        mask_position *= u_inv_channel_mask_dimension;\n        channel_mask = texture2D(u_channel_mask, mask_position);\n        */\n\n        // check if any channels of this tile are to be computed\n        //if (dot(channel_mask, ONES) == 0.0) continue;\n\n        index_on_sampler = mod(tile, <%=TILES_PER_TEXTURE=%>);\n        column = mod(index_on_sampler, <%=TILE_COLUMNS=%>);\n        row = floor(index_on_sampler / <%=TILE_COLUMNS=%>);\n\n        coords_2d_sample = vec2(\n            <%=TILE_WIDTH=%> * (column + u_mouse_position.x),\n            <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)\n        );\n\n        coords_2d_current = vec2(\n            <%=TILE_WIDTH=%> * (column + v_texture_position.x),\n            // y-flip the texture position because the textures are stored y-flipped.\n            <%=TILE_HEIGHT=%> * (row + 1.0 - v_texture_position.y)\n        );\n\n        // needed for DYNAMIC_SAMPLER_QUERIES\n        sampler_index = floor(tile / <%=TILES_PER_TEXTURE=%>);\n\n        // get rgba of the pixel to compare; filtered by the channel mask and\n        // get rgba of the position of this pixel; filtered by the channel mask\n        <%=DYNAMIC_SAMPLER_QUERIES\n        //sample = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        //current = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_current);\n        sample = texture2D(<%=SAMPLER=%>, coords_2d_sample);\n        current = texture2D(<%=SAMPLER=%>, coords_2d_current);\n        =%>\n\n        currentLength += dot(current, current);\n        sampleLength += dot(sample, sample);\n        angle += dot(current, sample);\n    }\n\n    // if the intensities of this fragment are all 0, don't draw it\n    if (currentLength == 0.0) {\n        gl_FragColor = ZEROS;\n        return;\n    }\n\n    angle *= inversesqrt(currentLength * sampleLength);\n\n    // Normalize and clip angle to [0, 1].\n    angle = acos(angle) * u_normalization;\n    angle = min(1.0, max(0.0, angle));\n\n    // Invert angle because a lower angle should signify a higher similarity.\n    angle = 1.0 - angle;\n\n    gl_FragColor = vec4(angle);\n}\n");
 
 /***/ }),
 
@@ -58824,7 +58824,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils */ "./resources/js/utils.js");
 /* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./webgl/Handler */ "./resources/js/webgl/Handler.js");
 /* harmony import */ var _components_visualization__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/visualization */ "./resources/js/components/visualization.js");
-/* harmony import */ var _components_intensityList__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/intensityList */ "./resources/js/components/intensityList.js");
+/* harmony import */ var _components_pixelVectorDisplay__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/pixelVectorDisplay */ "./resources/js/components/pixelVectorDisplay.js");
 var _components;
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -58841,12 +58841,12 @@ Object(_utils__WEBPACK_IMPORTED_MODULE_0__["mount"])('show-container', new Vue({
   },
   components: (_components = {
     visualization: _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]
-  }, _defineProperty(_components, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]), _defineProperty(_components, "intensityList", _components_intensityList__WEBPACK_IMPORTED_MODULE_3__["default"]), _components),
+  }, _defineProperty(_components, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]), _defineProperty(_components, "pixelVectorDisplay", _components_pixelVectorDisplay__WEBPACK_IMPORTED_MODULE_3__["default"]), _components),
   methods: {
     updatePixelVector: function updatePixelVector(vector) {
       // Use a method instead of prop because the pixel vector array stays the
       // same object.
-      this.$refs.intensityList.updatePixelVector(vector);
+      this.$refs.pixelVectorDisplay.updatePixelVector(vector);
     }
   },
   created: function created() {//
@@ -58975,90 +58975,6 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./resources/js/components/intensityList.js":
-/*!**************************************************!*\
-  !*** ./resources/js/components/intensityList.js ***!
-  \**************************************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../webgl/programs/colorMaps */ "./resources/js/webgl/programs/colorMaps.js");
-
-/* harmony default export */ __webpack_exports__["default"] = ({
-  template: "\n        <div class=\"intensity-list\">\n            <canvas ref=\"canvas\"></canvas>\n        </div>\n    ",
-  props: {
-    dataset: {
-      required: true,
-      type: Object
-    }
-  },
-  components: {//
-  },
-  data: function data() {
-    return {
-      hoverIndex: 0,
-      canvasSize: [0, 0]
-    };
-  },
-  computed: {
-    barHeight: function barHeight() {
-      return this.canvasSize[1] / this.dataset.features;
-    }
-  },
-  methods: {
-    updatePixelVector: function updatePixelVector(pixelVector) {
-      this.pixelVector = pixelVector;
-      this.drawCanvas();
-    },
-    drawCanvas: function drawCanvas() {
-      var ctx = this.ctx;
-      var width = this.canvasSize[0];
-      var height = this.canvasSize[1];
-      var vector = this.pixelVector;
-      var barHeight = this.barHeight;
-      var barWidth = 0;
-      this.canvas.width = width;
-      this.canvas.height = height;
-      ctx.fillStyle = '#ccc';
-      ctx.beginPath();
-      ctx.moveTo(width, 0);
-
-      for (var i = 0; i < height; i++) {
-        barWidth = width * vector[i] / 255;
-        ctx.lineTo(width - barWidth, i * barHeight);
-        ctx.lineTo(width - barWidth, (i + 1) * barHeight);
-      }
-
-      ctx.lineTo(width, height);
-      ctx.fill();
-    },
-    updateCanvasSize: function updateCanvasSize() {
-      this.canvasSize = [this.$el.clientWidth, this.$el.clientHeight];
-    }
-  },
-  watch: {
-    canvasSize: function canvasSize() {
-      this.drawCanvas();
-    }
-  },
-  created: function created() {
-    this.pixelVector = new Uint8Array([]);
-  },
-  mounted: function mounted() {
-    this.canvas = this.$refs.canvas;
-    this.ctx = this.canvas.getContext('2d'); // this.canvas.addEventListener('pointermove', this.updateHoverIndex.bind(this));
-    // window.addEventListener('resize', () => {
-    //     this.$nextTick(this.updateCanvasSize)
-    // });
-
-    this.$nextTick(this.updateCanvasSize);
-  }
-});
-
-/***/ }),
-
 /***/ "./resources/js/components/loadingIndicator.js":
 /*!*****************************************************!*\
   !*** ./resources/js/components/loadingIndicator.js ***!
@@ -59116,6 +59032,93 @@ __webpack_require__.r(__webpack_exports__);
       var d = ["M", start.x, start.y, "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(" ");
       return d;
     }
+  }
+});
+
+/***/ }),
+
+/***/ "./resources/js/components/pixelVectorDisplay.js":
+/*!*******************************************************!*\
+  !*** ./resources/js/components/pixelVectorDisplay.js ***!
+  \*******************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _webgl_programs_colorMaps__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../webgl/programs/colorMaps */ "./resources/js/webgl/programs/colorMaps.js");
+
+/* harmony default export */ __webpack_exports__["default"] = ({
+  template: "\n        <div class=\"intensity-list\">\n            <canvas ref=\"canvas\"></canvas>\n        </div>\n    ",
+  props: {
+    dataset: {
+      required: true,
+      type: Object
+    }
+  },
+  components: {//
+  },
+  data: function data() {
+    return {
+      hoverIndex: 0,
+      canvasSize: [0, 0]
+    };
+  },
+  computed: {
+    barHeight: function barHeight() {
+      return this.canvasSize[1] / this.dataset.features;
+    }
+  },
+  methods: {
+    updatePixelVector: function updatePixelVector(pixelVector) {
+      this.pixelVector = pixelVector;
+      this.drawCanvas();
+    },
+    drawCanvas: function drawCanvas() {
+      var ctx = this.ctx;
+      var width = this.canvasSize[0];
+      var height = this.canvasSize[1];
+      var vector = this.pixelVector;
+      var barHeight = this.barHeight;
+      var features = this.dataset.features;
+      var barWidth = 0;
+      this.canvas.width = width;
+      this.canvas.height = height;
+      ctx.fillStyle = '#ccc';
+      ctx.beginPath();
+      ctx.moveTo(width, 0);
+
+      for (var i = 0; i < features; i++) {
+        barWidth = width * vector[i] / 255;
+        ctx.lineTo(width - barWidth, i * barHeight);
+        ctx.lineTo(width - barWidth, (i + 1) * barHeight);
+      }
+
+      ctx.lineTo(width, height);
+      ctx.fill();
+    },
+    updateCanvasSize: function updateCanvasSize() {
+      this.canvasSize = [this.$el.clientWidth, this.$el.clientHeight];
+    }
+  },
+  watch: {
+    canvasSize: function canvasSize() {
+      this.drawCanvas();
+    }
+  },
+  created: function created() {
+    this.pixelVector = new Uint8Array([]);
+  },
+  mounted: function mounted() {
+    var _this = this;
+
+    this.canvas = this.$refs.canvas;
+    this.ctx = this.canvas.getContext('2d'); // this.canvas.addEventListener('pointermove', this.updateHoverIndex.bind(this));
+
+    window.addEventListener('resize', function () {
+      _this.$nextTick(_this.updateCanvasSize);
+    });
+    this.$nextTick(this.updateCanvasSize);
   }
 });
 
@@ -59582,14 +59585,13 @@ function () {
     value: function prepareWebgl_(gl, assets) {
       // We only draw a simple rectangular canvas that consists of two triangles.
       var buffer = this.getBuffer('textureCoordinateBuffer');
-      var textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+      var array = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
-      buffer = this.getBuffer('vertexCoordinateBuffer'); // Flip y-coordinates because the textures are stored y-flipped.
-
-      var vertexCoordinates = new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]);
+      gl.bufferData(gl.ARRAY_BUFFER, array, gl.STATIC_DRAW);
+      buffer = this.getBuffer('vertexCoordinateBuffer');
+      array = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, vertexCoordinates, gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, array, gl.STATIC_DRAW);
     }
   }, {
     key: "forEachTexture_",

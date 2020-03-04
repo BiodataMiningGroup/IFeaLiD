@@ -21,10 +21,10 @@
             ></visualization>
         </div>
         <div class="main-aside">
-            <intensity-list
-                ref="intensityList"
+            <pixel-vector-display
+                ref="pixelVectorDisplay"
                 v-bind:dataset="dataset"
-            ></intensity-list>
+            ></pixel-vector-display>
         </div>
     </div>
 </div>
