@@ -103,6 +103,8 @@ body {
         width: 200px;
         border-left: 1px solid black;
         position: relative;
-        overflow-y: auto;
+        overflow: hidden;
+        padding: 10px 0;
+        box-sizing: border-box;
     }
 }

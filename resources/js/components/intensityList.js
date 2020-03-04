@@ -37,6 +37,7 @@ export default {
             let height = this.canvasSize[1];
             let vector = this.pixelVector;
             let barHeight = this.barHeight;
+            let features = this.dataset.features;
             let barWidth = 0;
 
             this.canvas.width = width;
@@ -44,7 +45,7 @@ export default {
             ctx.fillStyle = '#ccc';
             ctx.beginPath();
             ctx.moveTo(width, 0);
-            for (let i = 0; i < height; i++) {
+            for (let i = 0; i < features; i++) {
                 barWidth = width * vector[i] / 255;
                 ctx.lineTo(width - barWidth, i * barHeight);
                 ctx.lineTo(width - barWidth, (i + 1) * barHeight);
@@ -68,9 +69,9 @@ export default {
         this.canvas = this.$refs.canvas;
         this.ctx = this.canvas.getContext('2d');
         // this.canvas.addEventListener('pointermove', this.updateHoverIndex.bind(this));
-        // window.addEventListener('resize', () => {
-        //     this.$nextTick(this.updateCanvasSize)
-        // });
+        window.addEventListener('resize', () => {
+            this.$nextTick(this.updateCanvasSize)
+        });
         this.$nextTick(this.updateCanvasSize);
     },
 };
