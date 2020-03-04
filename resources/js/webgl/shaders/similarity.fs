@@ -84,7 +84,8 @@ void main() {
 
         coords_2d_current = vec2(
             <%=TILE_WIDTH=%> * (column + v_texture_position.x),
-            <%=TILE_HEIGHT=%> * (row + v_texture_position.y)
+            // y-flip the texture position because the textures are stored y-flipped.
+            <%=TILE_HEIGHT=%> * (row + 1.0 - v_texture_position.y)
         );
 
         // needed for DYNAMIC_SAMPLER_QUERIES

@@ -108,15 +108,14 @@ export default class Handler {
     prepareWebgl_(gl, assets) {
         // We only draw a simple rectangular canvas that consists of two triangles.
         let buffer = this.getBuffer('textureCoordinateBuffer');
-        let textureCoordinates = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+        let array = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, textureCoordinates, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, array, gl.STATIC_DRAW);
 
         buffer = this.getBuffer('vertexCoordinateBuffer');
-        // Flip y-coordinates because the textures are stored y-flipped.
-        let vertexCoordinates = new Float32Array([-1, 1, 1, 1, -1, -1, 1, -1]);
+        array = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertexCoordinates, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, array, gl.STATIC_DRAW);
     }
 
     forEachTexture_(callback) {

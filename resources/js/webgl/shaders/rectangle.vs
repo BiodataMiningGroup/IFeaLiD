@@ -1,3 +1,5 @@
+precision mediump float;
+
 attribute vec2 a_vertex_position;
 attribute vec2 a_texture_position;
 varying vec2 v_texture_position;
