@@ -69,6 +69,6 @@ export default class PixelVector extends Program {
     }
 
     getPixelVector() {
-        return this.pixelVector;
+        return this.pixelVector.subarray(0, this.dataset.features);
     }
 }

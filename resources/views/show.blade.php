@@ -35,7 +35,8 @@
             <visualization
                 ref="visualization"
                 v-bind:dataset="dataset"
-                v-on:select="updatePixelVector"
+                v-on:hover="updateHoverPixelVector"
+                v-on:select="updateSelectPixelVector"
             ></visualization>
         </div>
         <div class="main-aside">

@@ -13,10 +13,15 @@ mount('show-container', new Vue({
         pixelVectorDisplay: pixelVectorDisplay,
     },
     methods: {
-        updatePixelVector(vector) {
+        updateHoverPixelVector(vector) {
             // Use a method instead of prop because the pixel vector array stays the
             // same object.
             this.$refs.pixelVectorDisplay.updatePixelVector(vector);
+        },
+        updateSelectPixelVector(vector) {
+            // Use a method instead of prop because the pixel vector array stays the
+            // same object.
+            this.$refs.pixelVectorDisplay.updateReferencePixelVector(vector);
         },
     },
     created() {

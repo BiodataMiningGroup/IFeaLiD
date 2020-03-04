@@ -18,7 +18,7 @@ export default {
             <div v-if="!ready" class="loading-overlay">
                 <loading-indicator :size="120" :progress="loaded"></loading-indicator>
             </div>
-            <color-scale ref="colorScale"></color-scale>
+            <color-scale v-show="ready" ref="colorScale"></color-scale>
         </div>
     `,
     props: {
@@ -154,8 +154,11 @@ export default {
                 .then(this.map.render.bind(this.map))
                 .then(this.updateColorScale);
         },
-        emitPixelVector() {
-            this.$emit('select', this.pixelVectorProgram.getPixelVector());
+        emitHover() {
+            this.$emit('hover', this.pixelVectorProgram.getPixelVector());
+        },
+        emitSelect() {
+            this.$emit('select', this.pixelVectorProgram.getPixelVector().slice());
         },
         updateColorScale() {
             this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
@@ -165,12 +168,13 @@ export default {
                 let oldPosition = this.similarityProgram.getMousePosition();
                 let newPosition = event.coordinate.map(Math.floor);
                 this.similarityProgram.setMousePosition(newPosition);
+                this.pixelVectorProgram.setMousePosition(newPosition);
                 if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
                     this.render();
+                    this.handler.render([this.pixelVectorProgram])
+                        .then(this.emitHover);
                 }
             }
-
-            this.updateMarkerPosition(event);
         },
         updateMarkerPosition(event) {
             if (containsCoordinate(this.extent, event.coordinate)) {
@@ -179,7 +183,7 @@ export default {
                 this.pixelVectorProgram.setMousePosition(newPosition);
                 if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
                     this.handler.render([this.pixelVectorProgram])
-                        .then(this.emitPixelVector);
+                        .then(this.emitSelect);
                 }
             }
         },

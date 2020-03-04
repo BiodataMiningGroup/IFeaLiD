@@ -58843,10 +58843,15 @@ Object(_utils__WEBPACK_IMPORTED_MODULE_0__["mount"])('show-container', new Vue({
     visualization: _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]
   }, _defineProperty(_components, "visualization", _components_visualization__WEBPACK_IMPORTED_MODULE_2__["default"]), _defineProperty(_components, "pixelVectorDisplay", _components_pixelVectorDisplay__WEBPACK_IMPORTED_MODULE_3__["default"]), _components),
   methods: {
-    updatePixelVector: function updatePixelVector(vector) {
+    updateHoverPixelVector: function updateHoverPixelVector(vector) {
       // Use a method instead of prop because the pixel vector array stays the
       // same object.
       this.$refs.pixelVectorDisplay.updatePixelVector(vector);
+    },
+    updateSelectPixelVector: function updateSelectPixelVector(vector) {
+      // Use a method instead of prop because the pixel vector array stays the
+      // same object.
+      this.$refs.pixelVectorDisplay.updateReferencePixelVector(vector);
     }
   },
   created: function created() {//
@@ -59061,7 +59066,8 @@ __webpack_require__.r(__webpack_exports__);
   data: function data() {
     return {
       hoverIndex: 0,
-      canvasSize: [0, 0]
+      canvasSize: [0, 0],
+      hasReference: false
     };
   },
   computed: {
@@ -59072,29 +59078,53 @@ __webpack_require__.r(__webpack_exports__);
   methods: {
     updatePixelVector: function updatePixelVector(pixelVector) {
       this.pixelVector = pixelVector;
-      this.drawCanvas();
+      this.draw();
     },
-    drawCanvas: function drawCanvas() {
-      var ctx = this.ctx;
+    updateReferencePixelVector: function updateReferencePixelVector(pixelVector) {
+      this.referencePixelVector = pixelVector;
+      this.hasReference = pixelVector.length > 0;
+      this.draw();
+    },
+    draw: function draw() {
+      if (this.hasReference) {
+        this.drawWithReference();
+      } else {
+        this.drawWithoutReference();
+      }
+    },
+    drawWithoutReference: function drawWithoutReference() {
       var width = this.canvasSize[0];
       var height = this.canvasSize[1];
-      var vector = this.pixelVector;
-      var barHeight = this.barHeight;
-      var features = this.dataset.features;
-      var barWidth = 0;
       this.canvas.width = width;
       this.canvas.height = height;
-      ctx.fillStyle = '#ccc';
+      this.ctx.fillStyle = 'white';
+      this.fillPath(width, 0, width, height, this.pixelVector, -1);
+    },
+    drawWithReference: function drawWithReference() {
+      var width = this.canvasSize[0];
+      var height = this.canvasSize[1];
+      var halfWidth = width / 2;
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.ctx.fillStyle = 'white';
+      this.fillPath(halfWidth, 0, halfWidth, height, this.pixelVector, -1);
+      this.ctx.fillStyle = '#ccc';
+      this.fillPath(halfWidth, 0, halfWidth, height, this.referencePixelVector, 1);
+    },
+    fillPath: function fillPath(startX, startY, width, height, vector, factor) {
+      var barHeight = this.barHeight;
+      var barWidth = 0;
+      var ctx = this.ctx;
       ctx.beginPath();
-      ctx.moveTo(width, 0);
+      ctx.moveTo(startX, startY);
 
-      for (var i = 0; i < features; i++) {
+      for (var i = 0; i < vector.length; i++) {
         barWidth = width * vector[i] / 255;
-        ctx.lineTo(width - barWidth, i * barHeight);
-        ctx.lineTo(width - barWidth, (i + 1) * barHeight);
+        ctx.lineTo(startX + factor * barWidth, startY + i * barHeight);
+        ctx.lineTo(startX + factor * barWidth, startY + (i + 1) * barHeight);
       }
 
-      ctx.lineTo(width, height);
+      ctx.lineTo(startX, startY + height);
       ctx.fill();
     },
     updateCanvasSize: function updateCanvasSize() {
@@ -59103,11 +59133,12 @@ __webpack_require__.r(__webpack_exports__);
   },
   watch: {
     canvasSize: function canvasSize() {
-      this.drawCanvas();
+      this.draw();
     }
   },
   created: function created() {
     this.pixelVector = new Uint8Array([]);
+    this.referencePixelVector = new Uint8Array([]);
   },
   mounted: function mounted() {
     var _this = this;
@@ -59160,7 +59191,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
-  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n            <color-scale ref=\"colorScale\"></color-scale>\n        </div>\n    ",
+  template: "\n        <div class=\"visualization\" ref=\"map\">\n            <div v-if=\"!ready\" class=\"loading-overlay\">\n                <loading-indicator :size=\"120\" :progress=\"loaded\"></loading-indicator>\n            </div>\n            <color-scale v-show=\"ready\" ref=\"colorScale\"></color-scale>\n        </div>\n    ",
   props: {
     dataset: {
       required: true,
@@ -59287,8 +59318,11 @@ __webpack_require__.r(__webpack_exports__);
     render: function render() {
       this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]).then(this.map.render.bind(this.map)).then(this.updateColorScale);
     },
-    emitPixelVector: function emitPixelVector() {
-      this.$emit('select', this.pixelVectorProgram.getPixelVector());
+    emitHover: function emitHover() {
+      this.$emit('hover', this.pixelVectorProgram.getPixelVector());
+    },
+    emitSelect: function emitSelect() {
+      this.$emit('select', this.pixelVectorProgram.getPixelVector().slice());
     },
     updateColorScale: function updateColorScale() {
       this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
@@ -59298,13 +59332,13 @@ __webpack_require__.r(__webpack_exports__);
         var oldPosition = this.similarityProgram.getMousePosition();
         var newPosition = event.coordinate.map(Math.floor);
         this.similarityProgram.setMousePosition(newPosition);
+        this.pixelVectorProgram.setMousePosition(newPosition);
 
         if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
           this.render();
+          this.handler.render([this.pixelVectorProgram]).then(this.emitHover);
         }
       }
-
-      this.updateMarkerPosition(event);
     },
     updateMarkerPosition: function updateMarkerPosition(event) {
       if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {
@@ -59313,7 +59347,7 @@ __webpack_require__.r(__webpack_exports__);
         this.pixelVectorProgram.setMousePosition(newPosition);
 
         if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-          this.handler.render([this.pixelVectorProgram]).then(this.emitPixelVector);
+          this.handler.render([this.pixelVectorProgram]).then(this.emitSelect);
         }
       }
     },
@@ -60178,7 +60212,7 @@ function (_Program) {
   }, {
     key: "getPixelVector",
     value: function getPixelVector() {
-      return this.pixelVector;
+      return this.pixelVector.subarray(0, this.dataset.features);
     }
   }]);
 

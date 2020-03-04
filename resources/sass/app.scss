@@ -1,7 +1,8 @@
 
-$primary: #fc6600;
-// $secondary: #ffd700;
-// $tertiary: #9f00b7;
+$orange: #fc6600;
+$primary: $orange;
+$yellow: #ffd700;
+$purple: #9f00b7;
 
 @import 'bootstrap';
 @import 'ol';
