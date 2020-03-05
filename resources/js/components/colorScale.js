@@ -30,7 +30,7 @@ export default {
 
             return {
                 'background-color': this.getColorScaleColor(255),
-                'border-bottom-color': this.getColorScaleColor(255),
+                'border-bottom-color': this.getColorScaleColor(0),
                 height: `${height}px`,
             };
         },

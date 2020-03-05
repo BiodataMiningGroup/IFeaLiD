@@ -44353,6 +44353,19 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/single-feature.fs":
+/*!********************************************************************************************!*\
+  !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/single-feature.fs ***!
+  \********************************************************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\n// index of the tile to which the feature belongs\nuniform float u_tile;\n// filters out every feature but the desired one\nuniform vec4 u_channel_mask;\n\nconst vec4 ONES = vec4(1);\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    // y-flip the texture position because the textures are stored y-flipped.\n    vec4 colors = texture3D(vec2(v_texture_position.x, 1.0 - v_texture_position.y), u_tile);\n    float channel_color = dot(colors * u_channel_mask, ONES);\n\n    gl_FragColor = vec4(channel_color);\n}\n");
+
+/***/ }),
+
 /***/ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/stretch-intensity.fs":
 /*!***********************************************************************************************!*\
   !*** ./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/stretch-intensity.fs ***!
@@ -58852,6 +58865,9 @@ Object(_utils__WEBPACK_IMPORTED_MODULE_0__["mount"])('show-container', new Vue({
       // Use a method instead of prop because the pixel vector array stays the
       // same object.
       this.$refs.pixelVectorDisplay.updateReferencePixelVector(vector);
+    },
+    updateHoveredFeature: function updateHoveredFeature(feature) {
+      this.$refs.visualization.showFeature(feature);
     }
   },
   created: function created() {//
@@ -58928,7 +58944,7 @@ __webpack_require__.r(__webpack_exports__);
 
       return {
         'background-color': this.getColorScaleColor(255),
-        'border-bottom-color': this.getColorScaleColor(255),
+        'border-bottom-color': this.getColorScaleColor(0),
         height: "".concat(height, "px")
       };
     },
@@ -59065,9 +59081,9 @@ __webpack_require__.r(__webpack_exports__);
   },
   data: function data() {
     return {
-      hoverIndex: 0,
       canvasSize: [0, 0],
-      hasReference: false
+      hasReference: false,
+      hoveredFeature: null
     };
   },
   computed: {
@@ -59086,6 +59102,15 @@ __webpack_require__.r(__webpack_exports__);
       this.draw();
     },
     draw: function draw() {
+      this.canvas.width = this.canvasSize[0];
+      this.canvas.height = this.canvasSize[1];
+
+      if (this.hoveredFeature !== null) {
+        // Bootstrap $gray-900.
+        this.ctx.fillStyle = '#212529';
+        this.ctx.fillRect(0, this.barHeight * this.hoveredFeature, this.canvas.width, this.barHeight);
+      }
+
       if (this.hasReference) {
         this.drawWithReference();
       } else {
@@ -59093,23 +59118,16 @@ __webpack_require__.r(__webpack_exports__);
       }
     },
     drawWithoutReference: function drawWithoutReference() {
-      var width = this.canvasSize[0];
-      var height = this.canvasSize[1];
-      this.canvas.width = width;
-      this.canvas.height = height;
       this.ctx.fillStyle = 'white';
-      this.fillPath(width, 0, width, height, this.pixelVector, -1);
+      this.fillPath(this.canvas.width, 0, this.canvas.width, this.canvas.height, this.pixelVector, -1);
     },
     drawWithReference: function drawWithReference() {
-      var width = this.canvasSize[0];
-      var height = this.canvasSize[1];
-      var halfWidth = width / 2;
-      this.canvas.width = width;
-      this.canvas.height = height;
+      var halfWidth = this.canvas.width / 2;
       this.ctx.fillStyle = 'white';
-      this.fillPath(halfWidth, 0, halfWidth, height, this.pixelVector, -1);
+      this.fillPath(halfWidth, 0, halfWidth, this.canvas.height, this.pixelVector, -1); // $primary color.
+
       this.ctx.fillStyle = '#fc6600';
-      this.fillPath(halfWidth, 0, halfWidth, height, this.referencePixelVector, 1);
+      this.fillPath(halfWidth, 0, halfWidth, this.canvas.height, this.referencePixelVector, 1);
     },
     fillPath: function fillPath(startX, startY, width, height, vector, factor) {
       var barHeight = this.barHeight;
@@ -59129,11 +59147,22 @@ __webpack_require__.r(__webpack_exports__);
     },
     updateCanvasSize: function updateCanvasSize() {
       this.canvasSize = [this.$el.clientWidth, this.$el.clientHeight];
+    },
+    updateHoveredFeature: function updateHoveredFeature(event) {
+      var rect = event.target.getBoundingClientRect();
+      this.hoveredFeature = Math.floor(this.dataset.features * (event.clientY - rect.top) / event.target.height);
+    },
+    resetHoveredFeature: function resetHoveredFeature() {
+      this.hoveredFeature = null;
     }
   },
   watch: {
     canvasSize: function canvasSize() {
       this.draw();
+    },
+    hoveredFeature: function hoveredFeature(feature) {
+      this.draw();
+      this.$emit('hover', feature);
     }
   },
   created: function created() {
@@ -59144,12 +59173,13 @@ __webpack_require__.r(__webpack_exports__);
     var _this = this;
 
     this.canvas = this.$refs.canvas;
-    this.ctx = this.canvas.getContext('2d'); // this.canvas.addEventListener('pointermove', this.updateHoverIndex.bind(this));
-
+    this.ctx = this.canvas.getContext('2d');
     window.addEventListener('resize', function () {
       _this.$nextTick(_this.updateCanvasSize);
     });
     this.$nextTick(this.updateCanvasSize);
+    this.canvas.addEventListener('pointermove', this.updateHoveredFeature);
+    this.canvas.addEventListener('pointerleave', this.resetHoveredFeature);
   }
 });
 
@@ -59182,8 +59212,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
 /* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
 /* harmony import */ var _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../webgl/programs/PixelVector */ "./resources/js/webgl/programs/PixelVector.js");
-/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
-/* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
+/* harmony import */ var _webgl_programs_SingleFeature__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../webgl/programs/SingleFeature */ "./resources/js/webgl/programs/SingleFeature.js");
+/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+/* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
+
 
 
 
@@ -59213,8 +59245,8 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   components: {
-    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_18__["default"],
-    colorScale: _colorScale__WEBPACK_IMPORTED_MODULE_19__["default"]
+    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_19__["default"],
+    colorScale: _colorScale__WEBPACK_IMPORTED_MODULE_20__["default"]
   },
   data: function data() {
     return {
@@ -59344,15 +59376,23 @@ __webpack_require__.r(__webpack_exports__);
       this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_15__["default"](this.dataset);
       this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_16__["default"]();
       this.pixelVectorProgram = new _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_17__["default"](this.dataset);
+      this.singleFeatureProgram = new _webgl_programs_SingleFeature__WEBPACK_IMPORTED_MODULE_18__["default"](this.dataset);
       this.handler.addProgram(this.similarityProgram);
       this.handler.addProgram(this.stretchIntensityProgram);
       this.handler.addProgram(this.colorMapProgram);
       this.handler.addProgram(this.pixelVectorProgram);
+      this.handler.addProgram(this.singleFeatureProgram);
       this.stretchIntensityProgram.link(this.similarityProgram);
       this.colorMapProgram.link(this.stretchIntensityProgram);
     },
-    render: function render() {
-      this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]).then(this.map.render.bind(this.map)).then(this.updateColorScale);
+    renderSimilarity: function renderSimilarity() {
+      this.handler.render([this.similarityProgram, this.stretchIntensityProgram, this.colorMapProgram]).then(this.map.render.bind(this.map)).then(this.updateSimilarityColorScale);
+    },
+    renderPixelVector: function renderPixelVector() {
+      return this.handler.render([this.pixelVectorProgram]);
+    },
+    renderSingleFeature: function renderSingleFeature() {
+      this.handler.render([this.singleFeatureProgram, this.stretchIntensityProgram, this.colorMapProgram]).then(this.map.render.bind(this.map)).then(this.updateFeatureColorScale);
     },
     emitHover: function emitHover() {
       this.$emit('hover', this.pixelVectorProgram.getPixelVector());
@@ -59363,7 +59403,10 @@ __webpack_require__.r(__webpack_exports__);
     emitUnselect: function emitUnselect() {
       this.$emit('select', []);
     },
-    updateColorScale: function updateColorScale() {
+    updateFeatureColorScale: function updateFeatureColorScale() {
+      this.$refs.colorScale.updateStretching(this.singleFeatureProgram.getIntensityStats());
+    },
+    updateSimilarityColorScale: function updateSimilarityColorScale() {
       this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
     },
     updateMousePosition: function updateMousePosition(event) {
@@ -59374,8 +59417,8 @@ __webpack_require__.r(__webpack_exports__);
         this.pixelVectorProgram.setMousePosition(newPosition);
 
         if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-          this.render();
-          this.handler.render([this.pixelVectorProgram]).then(this.emitHover);
+          this.renderSimilarity();
+          this.renderPixelVector().then(this.emitHover);
         }
       }
     },
@@ -59392,13 +59435,25 @@ __webpack_require__.r(__webpack_exports__);
           this.pixelVectorProgram.setMousePosition(newPosition);
 
           if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-            this.handler.render([this.pixelVectorProgram]).then(this.emitSelect);
+            this.renderPixelVector().then(this.emitSelect);
           }
         }
       }
     },
     setReady: function setReady() {
       this.ready = true;
+    },
+    showFeature: function showFeature(index) {
+      if (this.ready) {
+        if (index === null) {
+          this.stretchIntensityProgram.link(this.similarityProgram);
+          this.renderSimilarity();
+        } else {
+          this.singleFeatureProgram.setFeatureIndex(index);
+          this.stretchIntensityProgram.link(this.singleFeatureProgram);
+          this.renderSingleFeature();
+        }
+      }
     }
   },
   watch: {//
@@ -59412,7 +59467,7 @@ __webpack_require__.r(__webpack_exports__);
     this.initializeOpenLayers(canvas);
     this.initializeWebgl(canvas);
     this.initializePrograms();
-    this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.render).then(this.setReady).then(function () {
+    this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.renderSimilarity).then(this.setReady).then(function () {
       _this2.map.on('pointermove', _this2.updateMousePosition);
 
       _this2.map.on('click', _this2.updateMarkerPosition);
@@ -60147,6 +60202,112 @@ function (_Program) {
 
 /***/ }),
 
+/***/ "./resources/js/webgl/programs/IntensityProgram.js":
+/*!*********************************************************!*\
+  !*** ./resources/js/webgl/programs/IntensityProgram.js ***!
+  \*********************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return IntensityProgram; });
+/* harmony import */ var _Program__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Program */ "./resources/js/webgl/programs/Program.js");
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+var IntensityProgram =
+/*#__PURE__*/
+function (_Program) {
+  _inherits(IntensityProgram, _Program);
+
+  function IntensityProgram(vertexShaderSource, fragmentShaderSource, dataset) {
+    var _this;
+
+    _classCallCheck(this, IntensityProgram);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(IntensityProgram).call(this, vertexShaderSource, fragmentShaderSource));
+    _this.dataset = dataset;
+    _this.framebuffer = null;
+    _this.outputTexture = null;
+    _this.intensities = new Uint8Array(_this.dataset.width * _this.dataset.height * 4);
+    _this.intensityStats = {
+      min: 0,
+      max: 0
+    };
+    return _this;
+  }
+
+  _createClass(IntensityProgram, [{
+    key: "initialize",
+    value: function initialize(gl, handler) {
+      var pointer = this.getPointer();
+      handler.useVertexPositions(this);
+      handler.useTexturePositions(this);
+      handler.useTextures(this);
+      this.framebuffer = handler.getFramebuffer('intensity');
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+      this.outputTexture = handler.getTexture('intensity');
+      gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+  }, {
+    key: "beforeRender",
+    value: function beforeRender(gl, handler) {
+      handler.bindTextures();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    }
+  }, {
+    key: "afterRender",
+    value: function afterRender(gl, handler) {
+      gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, this.intensities);
+      this.intensityStats.max = 0;
+      this.intensityStats.min = 255;
+
+      for (var i = this.intensities.length - 1; i >= 0; i -= 4) {
+        this.intensityStats.max = Math.max(this.intensities[i], this.intensityStats.max);
+        this.intensityStats.min = Math.min(this.intensities[i], this.intensityStats.min);
+      }
+    }
+  }, {
+    key: "getOutputTexture",
+    value: function getOutputTexture() {
+      return this.outputTexture;
+    }
+  }, {
+    key: "getIntensityStats",
+    value: function getIntensityStats() {
+      return this.intensityStats;
+    }
+  }]);
+
+  return IntensityProgram;
+}(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
 /***/ "./resources/js/webgl/programs/PixelVector.js":
 /*!****************************************************!*\
   !*** ./resources/js/webgl/programs/PixelVector.js ***!
@@ -60347,7 +60508,7 @@ function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Similarity; });
-/* harmony import */ var _Program__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Program */ "./resources/js/webgl/programs/Program.js");
+/* harmony import */ var _IntensityProgram__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IntensityProgram */ "./resources/js/webgl/programs/IntensityProgram.js");
 /* harmony import */ var raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/similarity.fs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/similarity.fs");
 /* harmony import */ var raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.vs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs");
 function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -60362,6 +60523,10 @@ function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) ===
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
@@ -60375,65 +60540,41 @@ var MAX_DISTANCE = Math.PI / 2;
 
 var Similarity =
 /*#__PURE__*/
-function (_Program) {
-  _inherits(Similarity, _Program);
+function (_IntensityProgram) {
+  _inherits(Similarity, _IntensityProgram);
 
   function Similarity(dataset) {
     var _this;
 
     _classCallCheck(this, Similarity);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Similarity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Similarity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__["default"], dataset));
     _this.mousePosition = [0, 0];
     _this.mousePositionPointer = null;
-    _this.dataset = dataset;
-    _this.framebuffer = null;
-    _this.outputTexture = null;
-    _this.intensities = new Uint8Array(_this.dataset.width * _this.dataset.height * 4);
-    _this.intensityStats = {
-      min: 0,
-      max: 0
-    };
     return _this;
   }
 
   _createClass(Similarity, [{
     key: "initialize",
     value: function initialize(gl, handler) {
+      _get(_getPrototypeOf(Similarity.prototype), "initialize", this).call(this, gl, handler);
+
       var pointer = this.getPointer();
-      handler.useVertexPositions(this);
-      handler.useTexturePositions(this);
-      handler.useTextures(this);
       var normalization = gl.getUniformLocation(pointer, 'u_normalization');
       gl.uniform1f(normalization, 1 / MAX_DISTANCE);
       this.mousePositionPointer = gl.getUniformLocation(pointer, 'u_mouse_position');
-      this.framebuffer = handler.getFramebuffer('similarity');
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-      this.outputTexture = handler.getTexture('similarity');
-      gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
-      gl.bindTexture(gl.TEXTURE_2D, null);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
   }, {
     key: "beforeRender",
     value: function beforeRender(gl, handler) {
+      _get(_getPrototypeOf(Similarity.prototype), "beforeRender", this).call(this, gl, handler);
+
       gl.uniform2f(this.mousePositionPointer, this.mousePosition[0], this.mousePosition[1]);
-      handler.bindTextures();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
     }
   }, {
     key: "afterRender",
     value: function afterRender(gl, handler) {
-      gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, this.intensities);
-      this.intensityStats.max = 0;
-      this.intensityStats.min = 255;
-
-      for (var i = this.intensities.length - 1; i >= 0; i -= 4) {
-        this.intensityStats.max = Math.max(this.intensities[i], this.intensityStats.max);
-        this.intensityStats.min = Math.min(this.intensities[i], this.intensityStats.min);
-      }
+      _get(_getPrototypeOf(Similarity.prototype), "afterRender", this).call(this, gl, handler);
     }
   }, {
     key: "getMousePosition",
@@ -60447,20 +60588,114 @@ function (_Program) {
       // Flip y-coordinates because the webgl textures are flipped, too.
       this.mousePosition = [(position[0] + 0.5) / this.dataset.width, 1 - (position[1] + 0.5) / this.dataset.height];
     }
-  }, {
-    key: "getOutputTexture",
-    value: function getOutputTexture() {
-      return this.outputTexture;
-    }
-  }, {
-    key: "getIntensityStats",
-    value: function getIntensityStats() {
-      return this.intensityStats;
-    }
   }]);
 
   return Similarity;
-}(_Program__WEBPACK_IMPORTED_MODULE_0__["default"]);
+}(_IntensityProgram__WEBPACK_IMPORTED_MODULE_0__["default"]);
+
+
+
+/***/ }),
+
+/***/ "./resources/js/webgl/programs/SingleFeature.js":
+/*!******************************************************!*\
+  !*** ./resources/js/webgl/programs/SingleFeature.js ***!
+  \******************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return SingleFeature; });
+/* harmony import */ var _IntensityProgram__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IntensityProgram */ "./resources/js/webgl/programs/IntensityProgram.js");
+/* harmony import */ var raw_loader_shaders_single_feature_fs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! raw-loader!../shaders/single-feature.fs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/single-feature.fs");
+/* harmony import */ var raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! raw-loader!../shaders/rectangle.vs */ "./node_modules/raw-loader/dist/cjs.js!./resources/js/webgl/shaders/rectangle.vs");
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+
+
+
+
+var SingleFeature =
+/*#__PURE__*/
+function (_IntensityProgram) {
+  _inherits(SingleFeature, _IntensityProgram);
+
+  function SingleFeature(dataset) {
+    var _this;
+
+    _classCallCheck(this, SingleFeature);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(SingleFeature).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_single_feature_fs__WEBPACK_IMPORTED_MODULE_1__["default"], dataset));
+    _this.tilePointer = null;
+    _this.channelMaskPointer = null;
+    _this.featureTile = 0;
+    _this.channelMask = [0, 0, 0, 0];
+    return _this;
+  }
+
+  _createClass(SingleFeature, [{
+    key: "initialize",
+    value: function initialize(gl, handler) {
+      _get(_getPrototypeOf(SingleFeature.prototype), "initialize", this).call(this, gl, handler);
+
+      var pointer = this.getPointer();
+      this.tilePointer = gl.getUniformLocation(pointer, 'u_tile');
+      this.channelMaskPointer = gl.getUniformLocation(pointer, 'u_channel_mask');
+    }
+  }, {
+    key: "beforeRender",
+    value: function beforeRender(gl, handler) {
+      _get(_getPrototypeOf(SingleFeature.prototype), "beforeRender", this).call(this, gl, handler);
+
+      gl.uniform1f(this.tilePointer, this.featureTile);
+      gl.uniform4f.apply(gl, [this.channelMaskPointer].concat(_toConsumableArray(this.channelMask)));
+      console.log(this.channelMask);
+    }
+  }, {
+    key: "afterRender",
+    value: function afterRender(gl, handler) {
+      _get(_getPrototypeOf(SingleFeature.prototype), "afterRender", this).call(this, gl, handler);
+    }
+  }, {
+    key: "setFeatureIndex",
+    value: function setFeatureIndex(index) {
+      this.featureTile = Math.floor(index / 4);
+      this.channelMask.fill(0);
+      this.channelMask[index % 4] = 1;
+    }
+  }]);
+
+  return SingleFeature;
+}(_IntensityProgram__WEBPACK_IMPORTED_MODULE_0__["default"]);
 
 
 

@@ -23,6 +23,9 @@ mount('show-container', new Vue({
             // same object.
             this.$refs.pixelVectorDisplay.updateReferencePixelVector(vector);
         },
+        updateHoveredFeature(feature) {
+            this.$refs.visualization.showFeature(feature);
+        },
     },
     created() {
         //

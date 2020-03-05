@@ -16,6 +16,7 @@ import SimilarityProgram from '../webgl/programs/Similarity';
 import StretchIntensityProgram from '../webgl/programs/StretchIntensity';
 import ColorMapProgram from '../webgl/programs/ColorMap';
 import PixelVectorProgram from '../webgl/programs/PixelVector';
+import SingleFeatureProgram from '../webgl/programs/SingleFeature';
 import loadingIndicator from './loadingIndicator';
 import colorScale from './colorScale';
 
@@ -163,22 +164,36 @@ export default {
             this.stretchIntensityProgram = new StretchIntensityProgram(this.dataset);
             this.colorMapProgram = new ColorMapProgram();
             this.pixelVectorProgram = new PixelVectorProgram(this.dataset);
+            this.singleFeatureProgram = new SingleFeatureProgram(this.dataset);
             this.handler.addProgram(this.similarityProgram);
             this.handler.addProgram(this.stretchIntensityProgram);
             this.handler.addProgram(this.colorMapProgram);
             this.handler.addProgram(this.pixelVectorProgram);
+            this.handler.addProgram(this.singleFeatureProgram);
 
             this.stretchIntensityProgram.link(this.similarityProgram);
             this.colorMapProgram.link(this.stretchIntensityProgram);
         },
-        render() {
+        renderSimilarity() {
             this.handler.render([
                     this.similarityProgram,
                     this.stretchIntensityProgram,
                     this.colorMapProgram,
                 ])
                 .then(this.map.render.bind(this.map))
-                .then(this.updateColorScale);
+                .then(this.updateSimilarityColorScale);
+        },
+        renderPixelVector() {
+            return this.handler.render([this.pixelVectorProgram]);
+        },
+        renderSingleFeature() {
+            this.handler.render([
+                    this.singleFeatureProgram,
+                    this.stretchIntensityProgram,
+                    this.colorMapProgram,
+                ])
+                .then(this.map.render.bind(this.map))
+                .then(this.updateFeatureColorScale);
         },
         emitHover() {
             this.$emit('hover', this.pixelVectorProgram.getPixelVector());
@@ -189,7 +204,10 @@ export default {
         emitUnselect() {
             this.$emit('select', []);
         },
-        updateColorScale() {
+        updateFeatureColorScale() {
+            this.$refs.colorScale.updateStretching(this.singleFeatureProgram.getIntensityStats());
+        },
+        updateSimilarityColorScale() {
             this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
         },
         updateMousePosition(event) {
@@ -199,9 +217,8 @@ export default {
                 this.similarityProgram.setMousePosition(newPosition);
                 this.pixelVectorProgram.setMousePosition(newPosition);
                 if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-                    this.render();
-                    this.handler.render([this.pixelVectorProgram])
-                        .then(this.emitHover);
+                    this.renderSimilarity();
+                    this.renderPixelVector().then(this.emitHover);
                 }
             }
         },
@@ -217,14 +234,25 @@ export default {
                     let newPosition = event.coordinate.map(Math.floor);
                     this.pixelVectorProgram.setMousePosition(newPosition);
                     if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-                        this.handler.render([this.pixelVectorProgram])
-                            .then(this.emitSelect);
+                        this.renderPixelVector().then(this.emitSelect);
                     }
                 }
             }
         },
         setReady() {
             this.ready = true;
+        },
+        showFeature(index) {
+            if (this.ready) {
+                if (index === null) {
+                    this.stretchIntensityProgram.link(this.similarityProgram);
+                    this.renderSimilarity();
+                } else {
+                    this.singleFeatureProgram.setFeatureIndex(index);
+                    this.stretchIntensityProgram.link(this.singleFeatureProgram);
+                    this.renderSingleFeature();
+                }
+            }
         },
     },
     watch: {
@@ -240,7 +268,7 @@ export default {
         this.initializePrograms();
         this.fetchImages()
             .then(this.handler.storeTiles.bind(this.handler))
-            .then(this.render)
+            .then(this.renderSimilarity)
             .then(this.setReady)
             .then(() => {
                 this.map.on('pointermove', this.updateMousePosition);

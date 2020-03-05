@@ -17,9 +17,9 @@ export default {
     },
     data () {
         return {
-            hoverIndex: 0,
             canvasSize: [0, 0],
             hasReference: false,
+            hoveredFeature: null,
         };
     },
     computed: {
@@ -38,6 +38,15 @@ export default {
             this.draw();
         },
         draw() {
+            this.canvas.width = this.canvasSize[0];
+            this.canvas.height = this.canvasSize[1];
+
+            if (this.hoveredFeature !== null) {
+                // Bootstrap $gray-900.
+                this.ctx.fillStyle = '#212529';
+                this.ctx.fillRect(0, this.barHeight * this.hoveredFeature, this.canvas.width, this.barHeight);
+            }
+
             if (this.hasReference) {
                 this.drawWithReference();
             } else {
@@ -45,25 +54,16 @@ export default {
             }
         },
         drawWithoutReference() {
-            let width = this.canvasSize[0];
-            let height = this.canvasSize[1];
-            this.canvas.width = width;
-            this.canvas.height = height;
-
             this.ctx.fillStyle = 'white';
-            this.fillPath(width, 0, width, height, this.pixelVector, -1)
+            this.fillPath(this.canvas.width, 0, this.canvas.width, this.canvas.height, this.pixelVector, -1)
         },
         drawWithReference() {
-            let width = this.canvasSize[0];
-            let height = this.canvasSize[1];
-            let halfWidth = width / 2;
-            this.canvas.width = width;
-            this.canvas.height = height;
-
+            let halfWidth = this.canvas.width / 2;
             this.ctx.fillStyle = 'white';
-            this.fillPath(halfWidth, 0, halfWidth, height, this.pixelVector, -1)
+            this.fillPath(halfWidth, 0, halfWidth, this.canvas.height, this.pixelVector, -1)
+            // $primary color.
             this.ctx.fillStyle = '#fc6600';
-            this.fillPath(halfWidth, 0, halfWidth, height, this.referencePixelVector, 1)
+            this.fillPath(halfWidth, 0, halfWidth, this.canvas.height, this.referencePixelVector, 1)
         },
         fillPath(startX, startY, width, height, vector, factor) {
             let barHeight = this.barHeight;
@@ -71,7 +71,7 @@ export default {
             let ctx = this.ctx;
             ctx.beginPath();
             ctx.moveTo(startX, startY);
-            for (let i = 0; i < vector.length; i++) {
+            for (var i = 0; i < vector.length; i++) {
                 barWidth = width * vector[i] / 255;
                 ctx.lineTo(startX + factor * barWidth, startY + i * barHeight);
                 ctx.lineTo(startX + factor * barWidth, startY + (i + 1) * barHeight);
@@ -82,10 +82,21 @@ export default {
         updateCanvasSize() {
             this.canvasSize = [this.$el.clientWidth, this.$el.clientHeight];
         },
+        updateHoveredFeature(event) {
+            let rect = event.target.getBoundingClientRect();
+            this.hoveredFeature = Math.floor(this.dataset.features * (event.clientY - rect.top) / event.target.height);
+        },
+        resetHoveredFeature() {
+            this.hoveredFeature = null;
+        },
     },
     watch: {
         canvasSize() {
             this.draw();
+        },
+        hoveredFeature(feature) {
+            this.draw();
+            this.$emit('hover', feature);
         },
     },
     created() {
@@ -95,10 +106,11 @@ export default {
     mounted() {
         this.canvas = this.$refs.canvas;
         this.ctx = this.canvas.getContext('2d');
-        // this.canvas.addEventListener('pointermove', this.updateHoverIndex.bind(this));
         window.addEventListener('resize', () => {
             this.$nextTick(this.updateCanvasSize)
         });
         this.$nextTick(this.updateCanvasSize);
+        this.canvas.addEventListener('pointermove', this.updateHoveredFeature);
+        this.canvas.addEventListener('pointerleave', this.resetHoveredFeature);
     },
 };

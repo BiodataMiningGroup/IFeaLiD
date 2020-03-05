@@ -43,6 +43,7 @@
             <pixel-vector-display
                 ref="pixelVectorDisplay"
                 v-bind:dataset="dataset"
+                v-on:hover="updateHoveredFeature"
             ></pixel-vector-display>
         </div>
     </div>
