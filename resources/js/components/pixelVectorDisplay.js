@@ -62,7 +62,7 @@ export default {
 
             this.ctx.fillStyle = 'white';
             this.fillPath(halfWidth, 0, halfWidth, height, this.pixelVector, -1)
-            this.ctx.fillStyle = '#ccc';
+            this.ctx.fillStyle = '#fc6600';
             this.fillPath(halfWidth, 0, halfWidth, height, this.referencePixelVector, 1)
         },
         fillPath(startX, startY, width, height, vector, factor) {

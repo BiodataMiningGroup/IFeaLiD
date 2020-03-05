@@ -59108,7 +59108,7 @@ __webpack_require__.r(__webpack_exports__);
       this.canvas.height = height;
       this.ctx.fillStyle = 'white';
       this.fillPath(halfWidth, 0, halfWidth, height, this.pixelVector, -1);
-      this.ctx.fillStyle = '#ccc';
+      this.ctx.fillStyle = '#fc6600';
       this.fillPath(halfWidth, 0, halfWidth, height, this.referencePixelVector, 1);
     },
     fillPath: function fillPath(startX, startY, width, height, vector, factor) {
@@ -59166,17 +59166,31 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var ol__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ol */ "./node_modules/ol/index.js");
 /* harmony import */ var ol_layer_Image__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ol/layer/Image */ "./node_modules/ol/layer/Image.js");
-/* harmony import */ var _ol_source_Canvas__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../ol/source/Canvas */ "./resources/js/ol/source/Canvas.js");
-/* harmony import */ var ol_source_ImageStatic__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ol/source/ImageStatic */ "./node_modules/ol/source/ImageStatic.js");
-/* harmony import */ var ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ol/proj/Projection */ "./node_modules/ol/proj/Projection.js");
-/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
-/* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../webgl/Handler */ "./resources/js/webgl/Handler.js");
-/* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
-/* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
-/* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
-/* harmony import */ var _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../webgl/programs/PixelVector */ "./resources/js/webgl/programs/PixelVector.js");
-/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
-/* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
+/* harmony import */ var ol_layer_Vector__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ol/layer/Vector */ "./node_modules/ol/layer/Vector.js");
+/* harmony import */ var _ol_source_Canvas__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../ol/source/Canvas */ "./resources/js/ol/source/Canvas.js");
+/* harmony import */ var ol_source_ImageStatic__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ol/source/ImageStatic */ "./node_modules/ol/source/ImageStatic.js");
+/* harmony import */ var ol_source_Vector__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ol/source/Vector */ "./node_modules/ol/source/Vector.js");
+/* harmony import */ var ol_proj_Projection__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ol/proj/Projection */ "./node_modules/ol/proj/Projection.js");
+/* harmony import */ var ol_extent__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ol/extent */ "./node_modules/ol/extent.js");
+/* harmony import */ var ol_Feature__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ol/Feature */ "./node_modules/ol/Feature.js");
+/* harmony import */ var ol_geom_Point__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ol/geom/Point */ "./node_modules/ol/geom/Point.js");
+/* harmony import */ var ol_style_Circle__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ol/style/Circle */ "./node_modules/ol/style/Circle.js");
+/* harmony import */ var ol_style_Fill__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ol/style/Fill */ "./node_modules/ol/style/Fill.js");
+/* harmony import */ var ol_style_Style__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ol/style/Style */ "./node_modules/ol/style/Style.js");
+/* harmony import */ var _webgl_Handler__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../webgl/Handler */ "./resources/js/webgl/Handler.js");
+/* harmony import */ var _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ../webgl/programs/Similarity */ "./resources/js/webgl/programs/Similarity.js");
+/* harmony import */ var _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ../webgl/programs/StretchIntensity */ "./resources/js/webgl/programs/StretchIntensity.js");
+/* harmony import */ var _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ../webgl/programs/ColorMap */ "./resources/js/webgl/programs/ColorMap.js");
+/* harmony import */ var _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ../webgl/programs/PixelVector */ "./resources/js/webgl/programs/PixelVector.js");
+/* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
+/* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
+
+
+
+
+
+
+
 
 
 
@@ -59199,8 +59213,8 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   components: {
-    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_11__["default"],
-    colorScale: _colorScale__WEBPACK_IMPORTED_MODULE_12__["default"]
+    loadingIndicator: _loadingIndicator__WEBPACK_IMPORTED_MODULE_18__["default"],
+    colorScale: _colorScale__WEBPACK_IMPORTED_MODULE_19__["default"]
   },
   data: function data() {
     return {
@@ -59263,7 +59277,7 @@ __webpack_require__.r(__webpack_exports__);
       return canvas;
     },
     initializeWebgl: function initializeWebgl(canvas) {
-      this.handler = new _webgl_Handler__WEBPACK_IMPORTED_MODULE_6__["default"]({
+      this.handler = new _webgl_Handler__WEBPACK_IMPORTED_MODULE_13__["default"]({
         canvas: canvas,
         width: this.dataset.width,
         height: this.dataset.height,
@@ -59274,12 +59288,12 @@ __webpack_require__.r(__webpack_exports__);
       window.addEventListener('beforeunload', this.handler.destruct.bind(this.handler));
     },
     initializeOpenLayers: function initializeOpenLayers(canvas) {
-      var projection = new ol_proj_Projection__WEBPACK_IMPORTED_MODULE_4__["default"]({
+      var projection = new ol_proj_Projection__WEBPACK_IMPORTED_MODULE_6__["default"]({
         code: 'image',
         units: 'pixels',
         extent: this.extent
       });
-      this.canvasSource = new _ol_source_Canvas__WEBPACK_IMPORTED_MODULE_2__["default"]({
+      this.canvasSource = new _ol_source_Canvas__WEBPACK_IMPORTED_MODULE_3__["default"]({
         canvas: canvas,
         projection: projection,
         imageExtent: this.extent
@@ -59292,9 +59306,31 @@ __webpack_require__.r(__webpack_exports__);
       this.imageLayer.on('prerender', function (event) {
         event.context.imageSmoothingEnabled = false;
       });
+      this.markerFeature = new ol_Feature__WEBPACK_IMPORTED_MODULE_8__["default"](new ol_geom_Point__WEBPACK_IMPORTED_MODULE_9__["default"]([0, 0]));
+      this.markerLayer = new ol_layer_Vector__WEBPACK_IMPORTED_MODULE_2__["default"]({
+        visible: false,
+        source: new ol_source_Vector__WEBPACK_IMPORTED_MODULE_5__["default"]({
+          features: [this.markerFeature]
+        }),
+        style: [new ol_style_Style__WEBPACK_IMPORTED_MODULE_12__["default"]({
+          image: new ol_style_Circle__WEBPACK_IMPORTED_MODULE_10__["default"]({
+            radius: 7,
+            fill: new ol_style_Fill__WEBPACK_IMPORTED_MODULE_11__["default"]({
+              color: 'white'
+            })
+          })
+        }), new ol_style_Style__WEBPACK_IMPORTED_MODULE_12__["default"]({
+          image: new ol_style_Circle__WEBPACK_IMPORTED_MODULE_10__["default"]({
+            radius: 4,
+            fill: new ol_style_Fill__WEBPACK_IMPORTED_MODULE_11__["default"]({
+              color: '#fc6600'
+            })
+          })
+        })]
+      });
       this.map = new ol__WEBPACK_IMPORTED_MODULE_0__["Map"]({
         target: this.$refs.map,
-        layers: [this.imageLayer],
+        layers: [this.imageLayer, this.markerLayer],
         view: new ol__WEBPACK_IMPORTED_MODULE_0__["View"]({
           projection: projection
         })
@@ -59304,10 +59340,10 @@ __webpack_require__.r(__webpack_exports__);
       });
     },
     initializePrograms: function initializePrograms() {
-      this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_7__["default"](this.dataset);
-      this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_8__["default"](this.dataset);
-      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_9__["default"]();
-      this.pixelVectorProgram = new _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_10__["default"](this.dataset);
+      this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_14__["default"](this.dataset);
+      this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_15__["default"](this.dataset);
+      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_16__["default"]();
+      this.pixelVectorProgram = new _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_17__["default"](this.dataset);
       this.handler.addProgram(this.similarityProgram);
       this.handler.addProgram(this.stretchIntensityProgram);
       this.handler.addProgram(this.colorMapProgram);
@@ -59324,11 +59360,14 @@ __webpack_require__.r(__webpack_exports__);
     emitSelect: function emitSelect() {
       this.$emit('select', this.pixelVectorProgram.getPixelVector().slice());
     },
+    emitUnselect: function emitUnselect() {
+      this.$emit('select', []);
+    },
     updateColorScale: function updateColorScale() {
       this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
     },
     updateMousePosition: function updateMousePosition(event) {
-      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {
+      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_7__["containsCoordinate"])(this.extent, event.coordinate)) {
         var oldPosition = this.similarityProgram.getMousePosition();
         var newPosition = event.coordinate.map(Math.floor);
         this.similarityProgram.setMousePosition(newPosition);
@@ -59341,13 +59380,20 @@ __webpack_require__.r(__webpack_exports__);
       }
     },
     updateMarkerPosition: function updateMarkerPosition(event) {
-      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_5__["containsCoordinate"])(this.extent, event.coordinate)) {
-        var oldPosition = this.pixelVectorProgram.getMousePosition();
-        var newPosition = event.coordinate.map(Math.floor);
-        this.pixelVectorProgram.setMousePosition(newPosition);
+      if (Object(ol_extent__WEBPACK_IMPORTED_MODULE_7__["containsCoordinate"])(this.extent, event.coordinate)) {
+        if (this.map.hasFeatureAtPixel(event.pixel)) {
+          this.markerLayer.setVisible(false);
+          this.emitUnselect();
+        } else {
+          this.markerLayer.setVisible(true);
+          this.markerFeature.getGeometry().setCoordinates(event.coordinate);
+          var oldPosition = this.pixelVectorProgram.getMousePosition();
+          var newPosition = event.coordinate.map(Math.floor);
+          this.pixelVectorProgram.setMousePosition(newPosition);
 
-        if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-          this.handler.render([this.pixelVectorProgram]).then(this.emitSelect);
+          if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
+            this.handler.render([this.pixelVectorProgram]).then(this.emitSelect);
+          }
         }
       }
     },

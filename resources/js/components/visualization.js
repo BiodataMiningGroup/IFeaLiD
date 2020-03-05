@@ -1,9 +1,16 @@
 import {Map, View} from 'ol';
 import ImageLayer from 'ol/layer/Image';
+import VectorLayer from 'ol/layer/Vector';
 import CanvasSource from '../ol/source/Canvas';
 import ImageSource from 'ol/source/ImageStatic';
+import VectorSource from 'ol/source/Vector';
 import Projection from 'ol/proj/Projection';
 import {containsCoordinate} from 'ol/extent';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import CircleStyle from 'ol/style/Circle';
+import FillStyle from 'ol/style/Fill';
+import Style from 'ol/style/Style';
 import WebglHandler from '../webgl/Handler';
 import SimilarityProgram from '../webgl/programs/Similarity';
 import StretchIntensityProgram from '../webgl/programs/StretchIntensity';
@@ -119,14 +126,33 @@ export default {
                 event.context.imageSmoothingEnabled = false;
             });
 
+            this.markerFeature = new Feature(new Point([0, 0]));
+            this.markerLayer = new VectorLayer({
+                visible: false,
+                source: new VectorSource({features: [this.markerFeature]}),
+                style: [
+                    new Style({
+                        image: new CircleStyle({
+                            radius: 7,
+                            fill: new FillStyle({color: 'white'}),
+                        }),
+                    }),
+                    new Style({
+                        image: new CircleStyle({
+                            radius: 4,
+                            fill: new FillStyle({color: '#fc6600'}),
+                        }),
+                    }),
+                ],
+            });
+
             this.map = new Map({
                 target: this.$refs.map,
-                layers: [this.imageLayer],
+                layers: [this.imageLayer, this.markerLayer],
                 view: new View({
                     projection: projection,
                 }),
             });
-
 
             this.map.getView().fit(this.extent, {
                 padding: [10, 10, 10, 10],
@@ -160,6 +186,9 @@ export default {
         emitSelect() {
             this.$emit('select', this.pixelVectorProgram.getPixelVector().slice());
         },
+        emitUnselect() {
+            this.$emit('select', []);
+        },
         updateColorScale() {
             this.$refs.colorScale.updateStretching(this.similarityProgram.getIntensityStats());
         },
@@ -178,12 +207,19 @@ export default {
         },
         updateMarkerPosition(event) {
             if (containsCoordinate(this.extent, event.coordinate)) {
-                let oldPosition = this.pixelVectorProgram.getMousePosition();
-                let newPosition = event.coordinate.map(Math.floor);
-                this.pixelVectorProgram.setMousePosition(newPosition);
-                if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
-                    this.handler.render([this.pixelVectorProgram])
-                        .then(this.emitSelect);
+                if (this.map.hasFeatureAtPixel(event.pixel)) {
+                    this.markerLayer.setVisible(false);
+                    this.emitUnselect();
+                } else {
+                    this.markerLayer.setVisible(true);
+                    this.markerFeature.getGeometry().setCoordinates(event.coordinate);
+                    let oldPosition = this.pixelVectorProgram.getMousePosition();
+                    let newPosition = event.coordinate.map(Math.floor);
+                    this.pixelVectorProgram.setMousePosition(newPosition);
+                    if (oldPosition[0] !== newPosition[0] || oldPosition[1] !== newPosition[1]) {
+                        this.handler.render([this.pixelVectorProgram])
+                            .then(this.emitSelect);
+                    }
                 }
             }
         },
