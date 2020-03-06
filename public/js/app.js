@@ -74915,15 +74915,14 @@ __webpack_require__.r(__webpack_exports__);
         var image = new Image();
         promises.push(new Promise(function (resolve, reject) {
           images.push({
-            index: count,
             resolve: resolve,
             reject: reject
           });
         }));
       }
 
-      var requestAndDecode = function requestAndDecode(image) {
-        return _this.$http.get("".concat(_this.dataset.url, "/").concat(image.index, ".png"), {
+      var requestAndDecode = function requestAndDecode(image, index) {
+        return _this.$http.get("".concat(_this.dataset.url, "/").concat(index, ".png"), {
           responseType: 'arraybuffer'
         }).then(function (response) {
           new pngjs_browser__WEBPACK_IMPORTED_MODULE_21__["PNG"]().parse(response.body, function (error, png) {
@@ -74942,7 +74941,7 @@ __webpack_require__.r(__webpack_exports__);
         if (images.length > 0) {
           var _image = images.pop();
 
-          requestAndDecode(_image).then(loadImage)["catch"](_image.reject);
+          requestAndDecode(_image, images.length).then(loadImage)["catch"](_image.reject);
         }
       }; // Load images with multiple parallel connections.
 

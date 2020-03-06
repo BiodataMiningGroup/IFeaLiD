@@ -61,15 +61,14 @@ export default {
                 let image = new Image();
                 promises.push(new Promise(function (resolve, reject) {
                     images.push({
-                        index: count,
                         resolve: resolve,
                         reject: reject,
                     });
                 }));
             }
 
-            let requestAndDecode = (image) => {
-                return this.$http.get(`${this.dataset.url}/${image.index}.png`, {
+            let requestAndDecode = (image, index) => {
+                return this.$http.get(`${this.dataset.url}/${index}.png`, {
                         responseType: 'arraybuffer'
                     })
                     .then(function (response) {
@@ -87,7 +86,7 @@ export default {
                 this.loaded = 1 - (images.length / promises.length);
                 if (images.length > 0) {
                     let image = images.pop();
-                    requestAndDecode(image)
+                    requestAndDecode(image, images.length)
                         .then(loadImage)
                         .catch(image.reject);
                 }
