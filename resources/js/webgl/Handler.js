@@ -273,9 +273,9 @@ export default class Handler {
         return texture;
     }
 
-    fillTexture_(gl, texture, images, dataset, props) {
-        if (images.length > (props.rowsPerTexture * props.colsPerTexture)) {
-            throw new WebglError('Unexpected number of images for a texture (${images.length}).');
+    fillTexture_(gl, texture, tiles, dataset, props) {
+        if (tiles.length > (props.rowsPerTexture * props.colsPerTexture)) {
+            throw new WebglError('Unexpected number of tiles for a texture (${tiles.length}).');
         }
 
         gl.activeTexture(gl.TEXTURE0);
@@ -289,14 +289,16 @@ export default class Handler {
         // height, border width, source format, texture data type, pixel data
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4))
 
-        images.forEach(function (image, index) {
+        tiles.forEach(function (tile, index) {
             gl.texSubImage2D(gl.TEXTURE_2D,
                 0,
                 (index % props.colsPerTexture) * dataset.width,
                 Math.floor(index / props.colsPerTexture) * dataset.height,
+                dataset.width,
+                dataset.height,
                 gl.RGBA,
                 gl.UNSIGNED_BYTE,
-                image
+                tile
             );
         });
     }
@@ -339,14 +341,14 @@ export default class Handler {
         });
     }
 
-    storeTiles_(gl, images, dataset, props) {
-        if (images.length !== props.tiles) {
-            throw new WebglError(`Expected ${props.tiles} tile images but got ${images.length}.`);
+    storeTiles_(gl, tiles, dataset, props) {
+        if (tiles.length !== props.tiles) {
+            throw new WebglError(`Expected ${props.tiles} tile images but got ${tiles.length}.`);
         }
 
-        images.forEach(function (image) {
-            if (!(image instanceof HTMLImageElement)) {
-                throw new WebglError('Each tile image must be an HTMLImageElement.')
+        tiles.forEach(function (tile) {
+            if (!(tile instanceof Uint8Array)) {
+                throw new WebglError('Each tile image must be a Uint8Array.')
             }
         });
 
@@ -354,7 +356,7 @@ export default class Handler {
             let texture = this.getTexture(name);
             let firstTile = absIndex * props.tilesPerTexture;
             let lastTile = firstTile + props.tilesPerTexture;
-            let slice = images.slice(firstTile, lastTile);
+            let slice = tiles.slice(firstTile, lastTile);
             this.fillTexture_(gl, texture, slice, dataset, props);
         });
     }

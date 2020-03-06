@@ -19,6 +19,7 @@ import PixelVectorProgram from '../webgl/programs/PixelVector';
 import SingleFeatureProgram from '../webgl/programs/SingleFeature';
 import loadingIndicator from './loadingIndicator';
 import colorScale from './colorScale';
+import {PNG} from 'pngjs/browser';
 
 export default {
     template: `
@@ -59,26 +60,41 @@ export default {
             while (count--) {
                 let image = new Image();
                 promises.push(new Promise(function (resolve, reject) {
-                    image.addEventListener('error', reject);
-                    image.addEventListener('load', function () {
-                        resolve(image);
+                    images.push({
+                        index: count,
+                        resolve: resolve,
+                        reject: reject,
                     });
-                }))
-                images.push(image);
+                }));
             }
+
+            let requestAndDecode = (image) => {
+                return this.$http.get(`${this.dataset.url}/${image.index}.png`, {
+                        responseType: 'arraybuffer'
+                    })
+                    .then(function (response) {
+                        new PNG().parse(response.body, function(error, png) {
+                            if (error) {
+                                return image.reject(error);
+                            }
+
+                            return image.resolve(png.data);
+                        });
+                    });
+            };
 
             let loadImage = () => {
                 this.loaded = 1 - (images.length / promises.length);
                 if (images.length > 0) {
                     let image = images.pop();
-                    let index = images.length;
-                    image.addEventListener('load', loadImage);
-                    image.src = `${this.dataset.url}/${index}.png`;
+                    requestAndDecode(image)
+                        .then(loadImage)
+                        .catch(image.reject);
                 }
             };
 
             // Load images with multiple parallel connections.
-            let parallel = 3;
+            let parallel = Math.min(10, images.length);
             while (parallel--) {
                 loadImage();
             }
