@@ -60678,7 +60678,6 @@ function (_IntensityProgram) {
 
       gl.uniform1f(this.tilePointer, this.featureTile);
       gl.uniform4f.apply(gl, [this.channelMaskPointer].concat(_toConsumableArray(this.channelMask)));
-      console.log(this.channelMask);
     }
   }, {
     key: "afterRender",

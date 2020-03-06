@@ -22,7 +22,6 @@ export default class SingleFeature extends IntensityProgram {
         super.beforeRender(gl, handler);
         gl.uniform1f(this.tilePointer, this.featureTile);
         gl.uniform4f(this.channelMaskPointer, ...this.channelMask);
-        console.log(this.channelMask);
     }
 
     afterRender(gl, handler) {
