@@ -74856,8 +74856,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _webgl_programs_SingleFeature__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../webgl/programs/SingleFeature */ "./resources/js/webgl/programs/SingleFeature.js");
 /* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
 /* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
-/* harmony import */ var pngjs_browser__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! pngjs/browser */ "./node_modules/pngjs/browser.js");
-/* harmony import */ var pngjs_browser__WEBPACK_IMPORTED_MODULE_21___default = /*#__PURE__*/__webpack_require__.n(pngjs_browser__WEBPACK_IMPORTED_MODULE_21__);
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../utils */ "./resources/js/utils.js");
 
 
 
@@ -74921,32 +74920,23 @@ __webpack_require__.r(__webpack_exports__);
         }));
       }
 
-      var requestAndDecode = function requestAndDecode(image, index) {
-        return _this.$http.get("".concat(_this.dataset.url, "/").concat(index, ".png"), {
-          responseType: 'arraybuffer'
-        }).then(function (response) {
-          new pngjs_browser__WEBPACK_IMPORTED_MODULE_21__["PNG"]().parse(response.body, function (error, png) {
-            if (error) {
-              return image.reject(error);
-            }
-
-            return image.resolve(png.data);
-          });
-        });
-      };
-
       var loadImage = function loadImage() {
         _this.loaded = 1 - images.length / promises.length;
 
         if (images.length > 0) {
           var _image = images.pop();
 
-          requestAndDecode(_image, images.length).then(loadImage)["catch"](_image.reject);
+          var index = images.length;
+          Object(_utils__WEBPACK_IMPORTED_MODULE_21__["fetchAndDecodePng"])("".concat(_this.dataset.url, "/").concat(index, ".png")).then(function (data) {
+            _this.handler.storeTile(data, index);
+
+            _image.resolve();
+          }).then(loadImage)["catch"](_image.reject);
         }
       }; // Load images with multiple parallel connections.
 
 
-      var parallel = Math.min(10, images.length);
+      var parallel = Math.min(3, images.length);
 
       while (parallel--) {
         loadImage();
@@ -75119,10 +75109,12 @@ __webpack_require__.r(__webpack_exports__);
     this.initializeOpenLayers(canvas);
     this.initializeWebgl(canvas);
     this.initializePrograms();
-    this.fetchImages().then(this.handler.storeTiles.bind(this.handler)).then(this.renderSimilarity).then(this.setReady).then(function () {
+    this.fetchImages().then(this.renderSimilarity).then(this.setReady).then(function () {
       _this2.map.on('pointermove', _this2.updateMousePosition);
 
       _this2.map.on('click', _this2.updateMarkerPosition);
+    })["catch"](function (error) {
+      console.error(error);
     });
   }
 });
@@ -75195,12 +75187,19 @@ function (_ImageStatic) {
 /*!*******************************!*\
   !*** ./resources/js/utils.js ***!
   \*******************************/
-/*! exports provided: mount */
+/*! exports provided: mount, fetchAndDecodePng */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "mount", function() { return mount; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fetchAndDecodePng", function() { return fetchAndDecodePng; });
+/* harmony import */ var pngjs_browser__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pngjs/browser */ "./node_modules/pngjs/browser.js");
+/* harmony import */ var pngjs_browser__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(pngjs_browser__WEBPACK_IMPORTED_MODULE_0__);
+
+var canvas;
+var gl;
+
 var mount = function mount(id, vm) {
   window.addEventListener('load', function () {
     var element = document.getElementById(id);
@@ -75209,6 +75208,51 @@ var mount = function mount(id, vm) {
       vm.$mount(element);
     }
   });
+};
+
+var fetchAndDecodePng = function fetchAndDecodePng(url) {
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    gl = canvas.getContext("webgl2");
+    gl.activeTexture(gl.TEXTURE0);
+    var texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    var framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+  }
+
+  if (gl) {
+    var img = new Image();
+    var promise = new Promise(function (resolve, reject) {
+      img.addEventListener('load', function () {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+        var data = new Uint8Array(this.width * this.height * 4);
+        gl.readPixels(0, 0, this.width, this.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
+        resolve(data);
+      });
+      img.addEventListener('error', function () {
+        reject("Failed to load image ".concat(img.src, "."));
+      });
+    });
+    img.src = url;
+    return promise;
+  } else {
+    return Vue.http.get(url, {
+      responseType: 'arraybuffer'
+    }).then(function (response) {
+      return new Promise(function (resolve, reject) {
+        new pngjs_browser__WEBPACK_IMPORTED_MODULE_0__["PNG"]().parse(response.body, function (error, png) {
+          if (error) {
+            return reject(error);
+          }
+
+          return resolve(png.data);
+        });
+      });
+    });
+  }
 };
 
 
@@ -75279,7 +75323,6 @@ function () {
   function Handler(options) {
     _classCallCheck(this, Handler);
 
-    this.isReady_ = false;
     this.canvas_ = options.canvas;
     this.gl_ = this.getWebglContext_(this.canvas_, {
       preserveDrawingBuffer: true,
@@ -75291,6 +75334,9 @@ function () {
       depth: options.depth === undefined ? 0 : options.depth
     };
     this.props_ = this.getProps_(this.gl_, this.dataset_, options);
+    this.tilesToStore_ = this.props_.tiles;
+    this.initializedTextures_ = new Array(this.props_.requiredUnits);
+    this.initializedTextures_.fill(false);
     this.programs_ = [];
     this.assets_ = {
       buffers: {},
@@ -75381,15 +75427,19 @@ function () {
       gl.bufferData(gl.ARRAY_BUFFER, array, gl.STATIC_DRAW);
     }
   }, {
+    key: "forTextureWithNumber_",
+    value: function forTextureWithNumber_(number, callback) {
+      var index = number + this.props_.reservedUnits;
+      var name = "".concat(TEXTURE_PREFIX).concat(index);
+      callback(name, index, number);
+    }
+  }, {
     key: "forEachTexture_",
     value: function forEachTexture_(callback) {
       var number = this.props_.requiredUnits;
-      var offset = this.props_.reservedUnits;
 
       while (number-- > 0) {
-        var index = number + offset;
-        var name = "".concat(TEXTURE_PREFIX).concat(index);
-        callback(name, index, number);
+        this.forTextureWithNumber_(number, callback);
       }
     }
   }, {
@@ -75513,25 +75563,6 @@ function () {
       return texture;
     }
   }, {
-    key: "fillTexture_",
-    value: function fillTexture_(gl, texture, tiles, dataset, props) {
-      if (tiles.length > props.rowsPerTexture * props.colsPerTexture) {
-        throw new WebglError('Unexpected number of tiles for a texture (${tiles.length}).');
-      }
-
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      var width = props.colsPerTexture * dataset.width;
-      var height = props.rowsPerTexture * dataset.height; // Allocate needed memory with a blank texture. Parameters are:
-      // target, level of detail, internal format, width,
-      // height, border width, source format, texture data type, pixel data
-
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
-      tiles.forEach(function (tile, index) {
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, index % props.colsPerTexture * dataset.width, Math.floor(index / props.colsPerTexture) * dataset.height, dataset.width, dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, tile);
-      });
-    }
-  }, {
     key: "useTextures_",
     value: function useTextures_(gl, program) {
       if (!(program instanceof WebGLProgram)) {
@@ -75578,27 +75609,38 @@ function () {
       });
     }
   }, {
-    key: "storeTiles_",
-    value: function storeTiles_(gl, tiles, dataset, props) {
+    key: "storeTile_",
+    value: function storeTile_(gl, tile, index, dataset, props) {
       var _this3 = this;
 
-      if (tiles.length !== props.tiles) {
-        throw new WebglError("Expected ".concat(props.tiles, " tile images but got ").concat(tiles.length, "."));
+      if (!(tile instanceof Uint8Array)) {
+        throw new WebglError('Each tile image must be a Uint8Array.');
       }
 
-      tiles.forEach(function (tile) {
-        if (!(tile instanceof Uint8Array)) {
-          throw new WebglError('Each tile image must be a Uint8Array.');
-        }
-      });
-      this.forEachTexture_(function (name, index, absIndex) {
+      var textureNumber = Math.floor(index / props.tilesPerTexture);
+
+      if (textureNumber > props.requiredUnits) {
+        throw new WebglError('Invalid tile index.');
+      }
+
+      var indexOnTexture = index % props.tilesPerTexture;
+      this.forTextureWithNumber_(textureNumber, function (name) {
         var texture = _this3.getTexture(name);
 
-        var firstTile = absIndex * props.tilesPerTexture;
-        var lastTile = firstTile + props.tilesPerTexture;
-        var slice = tiles.slice(firstTile, lastTile);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
 
-        _this3.fillTexture_(gl, texture, slice, dataset, props);
+        if (!_this3.initializedTextures_[textureNumber]) {
+          var width = props.colsPerTexture * dataset.width;
+          var height = props.rowsPerTexture * dataset.height; // Allocate needed memory with a blank texture. Parameters are:
+          // target, level of detail, internal format, width,
+          // height, border width, source format, texture data type, pixel data
+
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
+          _this3.initializedTextures_[textureNumber] = true;
+        }
+
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, indexOnTexture % props.colsPerTexture * dataset.width, Math.floor(indexOnTexture / props.colsPerTexture) * dataset.height, dataset.width, dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, tile);
       });
     }
   }, {
@@ -75703,16 +75745,16 @@ function () {
       this.programs_.push(this.addProgram_(this.gl_, program));
     }
   }, {
-    key: "storeTiles",
-    value: function storeTiles(images) {
-      this.storeTiles_(this.gl_, images, this.dataset_, this.props_);
-      this.isReady_ = true;
+    key: "storeTile",
+    value: function storeTile(image, index) {
+      this.storeTile_(this.gl_, image, index, this.dataset_, this.props_);
+      this.tilesToStore_ -= 1;
     }
   }, {
     key: "renderSync",
     value: function renderSync(programs) {
-      if (!this.isReady_) {
-        throw new WebglError('The tiles must be stored first.');
+      if (this.tilesToStore_ > 0) {
+        throw new WebglError("The tiles must be stored first (".concat(this.tilesToStore_, " remaining)."));
       }
 
       this.renderSync_(this.gl_, programs || []);

@@ -10,7 +10,6 @@ class WebglError extends Error {}
 
 export default class Handler {
     constructor(options) {
-        this.isReady_ = false;
         this.canvas_ = options.canvas;
         this.gl_ = this.getWebglContext_(this.canvas_, {
             preserveDrawingBuffer: true,
@@ -24,6 +23,9 @@ export default class Handler {
         };
 
         this.props_ = this.getProps_(this.gl_, this.dataset_, options);
+        this.tilesToStore_ = this.props_.tiles;
+        this.initializedTextures_ = new Array(this.props_.requiredUnits);
+        this.initializedTextures_.fill(false);
 
         this.programs_ = [];
 
@@ -118,14 +120,17 @@ export default class Handler {
         gl.bufferData(gl.ARRAY_BUFFER, array, gl.STATIC_DRAW);
     }
 
+    forTextureWithNumber_(number, callback) {
+        let index = number + this.props_.reservedUnits;
+        let name = `${TEXTURE_PREFIX}${index}`;
+        callback(name, index, number);
+    }
+
     forEachTexture_(callback) {
         let number = this.props_.requiredUnits;
-        let offset = this.props_.reservedUnits;
 
         while (number-- > 0) {
-            let index = number + offset;
-            let name = `${TEXTURE_PREFIX}${index}`;
-            callback(name, index, number);
+            this.forTextureWithNumber_(number, callback);
         }
     }
 
@@ -273,36 +278,6 @@ export default class Handler {
         return texture;
     }
 
-    fillTexture_(gl, texture, tiles, dataset, props) {
-        if (tiles.length > (props.rowsPerTexture * props.colsPerTexture)) {
-            throw new WebglError('Unexpected number of tiles for a texture (${tiles.length}).');
-        }
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-
-        let width = props.colsPerTexture * dataset.width;
-        let height = props.rowsPerTexture * dataset.height;
-
-        // Allocate needed memory with a blank texture. Parameters are:
-        // target, level of detail, internal format, width,
-        // height, border width, source format, texture data type, pixel data
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4))
-
-        tiles.forEach(function (tile, index) {
-            gl.texSubImage2D(gl.TEXTURE_2D,
-                0,
-                (index % props.colsPerTexture) * dataset.width,
-                Math.floor(index / props.colsPerTexture) * dataset.height,
-                dataset.width,
-                dataset.height,
-                gl.RGBA,
-                gl.UNSIGNED_BYTE,
-                tile
-            );
-        });
-    }
-
     useTextures_(gl, program) {
         if (!(program instanceof WebGLProgram)) {
             throw new WebglError('The program must be a WebGLProgram');
@@ -341,23 +316,44 @@ export default class Handler {
         });
     }
 
-    storeTiles_(gl, tiles, dataset, props) {
-        if (tiles.length !== props.tiles) {
-            throw new WebglError(`Expected ${props.tiles} tile images but got ${tiles.length}.`);
+    storeTile_(gl, tile, index, dataset, props) {
+        if (!(tile instanceof Uint8Array)) {
+            throw new WebglError('Each tile image must be a Uint8Array.')
         }
 
-        tiles.forEach(function (tile) {
-            if (!(tile instanceof Uint8Array)) {
-                throw new WebglError('Each tile image must be a Uint8Array.')
-            }
-        });
+        let textureNumber = Math.floor(index / props.tilesPerTexture);
+        if (textureNumber > props.requiredUnits) {
+            throw new WebglError('Invalid tile index.');
+        }
 
-        this.forEachTexture_((name, index, absIndex) => {
+        let indexOnTexture = index % props.tilesPerTexture;
+
+        this.forTextureWithNumber_(textureNumber, (name) => {
             let texture = this.getTexture(name);
-            let firstTile = absIndex * props.tilesPerTexture;
-            let lastTile = firstTile + props.tilesPerTexture;
-            let slice = tiles.slice(firstTile, lastTile);
-            this.fillTexture_(gl, texture, slice, dataset, props);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+
+            if (!this.initializedTextures_[textureNumber]) {
+                let width = props.colsPerTexture * dataset.width;
+                let height = props.rowsPerTexture * dataset.height;
+
+                // Allocate needed memory with a blank texture. Parameters are:
+                // target, level of detail, internal format, width,
+                // height, border width, source format, texture data type, pixel data
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4))
+                this.initializedTextures_[textureNumber] = true;
+            }
+
+            gl.texSubImage2D(gl.TEXTURE_2D,
+                0,
+                (indexOnTexture % props.colsPerTexture) * dataset.width,
+                Math.floor(indexOnTexture / props.colsPerTexture) * dataset.height,
+                dataset.width,
+                dataset.height,
+                gl.RGBA,
+                gl.UNSIGNED_BYTE,
+                tile
+            );
         });
     }
 
@@ -455,14 +451,14 @@ export default class Handler {
         this.programs_.push(this.addProgram_(this.gl_, program));
     }
 
-    storeTiles(images) {
-        this.storeTiles_(this.gl_, images, this.dataset_, this.props_);
-        this.isReady_ = true;
+    storeTile(image, index) {
+        this.storeTile_(this.gl_, image, index, this.dataset_, this.props_);
+        this.tilesToStore_ -= 1;
     }
 
     renderSync(programs) {
-        if (!this.isReady_) {
-            throw new WebglError('The tiles must be stored first.');
+        if (this.tilesToStore_ > 0) {
+            throw new WebglError(`The tiles must be stored first (${this.tilesToStore_} remaining).`);
         }
 
         this.renderSync_(this.gl_, programs || []);

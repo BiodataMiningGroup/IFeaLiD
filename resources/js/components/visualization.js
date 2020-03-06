@@ -19,7 +19,7 @@ import PixelVectorProgram from '../webgl/programs/PixelVector';
 import SingleFeatureProgram from '../webgl/programs/SingleFeature';
 import loadingIndicator from './loadingIndicator';
 import colorScale from './colorScale';
-import {PNG} from 'pngjs/browser';
+import {fetchAndDecodePng} from '../utils';
 
 export default {
     template: `
@@ -67,33 +67,23 @@ export default {
                 }));
             }
 
-            let requestAndDecode = (image, index) => {
-                return this.$http.get(`${this.dataset.url}/${index}.png`, {
-                        responseType: 'arraybuffer'
-                    })
-                    .then(function (response) {
-                        new PNG().parse(response.body, function(error, png) {
-                            if (error) {
-                                return image.reject(error);
-                            }
-
-                            return image.resolve(png.data);
-                        });
-                    });
-            };
-
             let loadImage = () => {
                 this.loaded = 1 - (images.length / promises.length);
                 if (images.length > 0) {
                     let image = images.pop();
-                    requestAndDecode(image, images.length)
+                    let index = images.length;
+                    fetchAndDecodePng(`${this.dataset.url}/${index}.png`)
+                        .then((data) => {
+                            this.handler.storeTile(data, index);
+                            image.resolve();
+                        })
                         .then(loadImage)
                         .catch(image.reject);
                 }
             };
 
             // Load images with multiple parallel connections.
-            let parallel = Math.min(10, images.length);
+            let parallel = Math.min(3, images.length);
             while (parallel--) {
                 loadImage();
             }
@@ -282,12 +272,14 @@ export default {
         this.initializeWebgl(canvas);
         this.initializePrograms();
         this.fetchImages()
-            .then(this.handler.storeTiles.bind(this.handler))
             .then(this.renderSimilarity)
             .then(this.setReady)
             .then(() => {
                 this.map.on('pointermove', this.updateMousePosition);
                 this.map.on('click', this.updateMarkerPosition);
+            })
+            .catch(function (error) {
+                console.error(error);
             });
     },
 };
