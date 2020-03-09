@@ -19,7 +19,7 @@ import PixelVectorProgram from '../webgl/programs/PixelVector';
 import SingleFeatureProgram from '../webgl/programs/SingleFeature';
 import loadingIndicator from './loadingIndicator';
 import colorScale from './colorScale';
-import {fetchAndDecodePng} from '../utils';
+import {ImageHandler} from '../utils';
 
 export default {
     template: `
@@ -55,35 +55,34 @@ export default {
         fetchImages() {
             let count = Math.ceil(this.dataset.features / 4);
             let promises = [];
-            let images = [];
+            let resolveAndReject = [];
+            let imageHandler = new ImageHandler(this.dataset);
 
             while (count--) {
-                let image = new Image();
                 promises.push(new Promise(function (resolve, reject) {
-                    images.push({
-                        resolve: resolve,
-                        reject: reject,
-                    });
+                    resolveAndReject.push({resolve, reject});
                 }));
             }
 
             let loadImage = () => {
-                this.loaded = 1 - (images.length / promises.length);
-                if (images.length > 0) {
-                    let image = images.pop();
-                    let index = images.length;
-                    fetchAndDecodePng(`${this.dataset.url}/${index}.png`)
+                this.loaded = 1 - (resolveAndReject.length / promises.length);
+                if (resolveAndReject.length > 0) {
+                    let rar = resolveAndReject.pop();
+                    let index = resolveAndReject.length;
+                    imageHandler.fetchImage(index)
+                        .then(imageHandler.decodeImage.bind(imageHandler))
                         .then((data) => {
                             this.handler.storeTile(data, index);
-                            image.resolve();
                         })
+                        .then(rar.resolve)
                         .then(loadImage)
-                        .catch(image.reject);
+                        .catch(rar.reject);
+
                 }
             };
 
             // Load images with multiple parallel connections.
-            let parallel = Math.min(3, images.length);
+            let parallel = Math.min(3, promises.length);
             while (parallel--) {
                 loadImage();
             }

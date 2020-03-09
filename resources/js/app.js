@@ -3,7 +3,6 @@ import {mount} from './utils';
 import WebglHandler from './webgl/Handler';
 import visualization from './components/visualization';
 import pixelVectorDisplay from './components/pixelVectorDisplay';
-import {PNG} from 'pngjs/browser';
 
 mount('show-container', new Vue({
     data: {
@@ -35,7 +34,3 @@ mount('show-container', new Vue({
         //
     },
 }));
-
-// new PNG().parse('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGPg2T3JDgADyAGYmiSbAQAAAABJRU5ErkJggg==', function (err, png) {
-//     console.log(err, png);
-// });
