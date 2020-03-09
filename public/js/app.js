@@ -58825,6 +58825,191 @@ module.exports = g;
 
 /***/ }),
 
+/***/ "./resources/js/ImageHandler.js":
+/*!**************************************!*\
+  !*** ./resources/js/ImageHandler.js ***!
+  \**************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ImageHandler; });
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var ImageHandler =
+/*#__PURE__*/
+function () {
+  function ImageHandler(dataset) {
+    _classCallCheck(this, ImageHandler);
+
+    this.dataset = dataset;
+    this.gl = this.initializeGl_();
+  }
+
+  _createClass(ImageHandler, [{
+    key: "initializeGl_",
+    value: function initializeGl_() {
+      var canvas = document.createElement('canvas');
+      var gl = canvas.getContext("webgl2");
+
+      if (!gl) {
+        throw 'Your browser does not support WebGL 2.';
+      }
+
+      gl.getExtension("EXT_color_buffer_float");
+      gl.activeTexture(gl.TEXTURE0);
+      var texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, gl.createFramebuffer());
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      return gl;
+    }
+  }, {
+    key: "fetchImage_",
+    value: function fetchImage_(index) {
+      var image = new Image();
+      var promise = new Promise(function (resolve, reject) {
+        image.addEventListener('load', function () {
+          resolve(image);
+        });
+        image.addEventListener('error', reject);
+      });
+      image.src = "".concat(this.dataset.url, "/").concat(index, ".png");
+      return promise;
+    }
+  }, {
+    key: "decodeImage_",
+    value: function decodeImage_(image) {
+      var gl = this.gl;
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+      var data = new Uint8Array(image.width * image.height * 4);
+      gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
+
+      if (this.dataset.precision === 8) {
+        return data;
+      } else if (this.dataset.precision === 16) {
+        return new Uint16Array(data.buffer);
+      }
+
+      return new Uint32Array(data.buffer);
+    }
+  }, {
+    key: "mergeImagesToTile16bit_",
+    value: function mergeImagesToTile16bit_(images) {
+      var merged = new Float32Array(this.dataset.width * this.dataset.height * 4);
+      var uint16Max = 65535;
+
+      for (var i = 0; i < images[0].length; i += 2) {
+        merged[i * 4] = images[0][i] / uint16Max;
+        merged[i * 4 + 1] = images[0][i + 1] / uint16Max;
+        merged[i * 4 + 2] = images[1][i] / uint16Max;
+        merged[i * 4 + 3] = images[1][i + 1] / uint16Max;
+      }
+
+      return merged;
+    }
+  }, {
+    key: "mergeImagesToTile32bit_",
+    value: function mergeImagesToTile32bit_(images) {
+      var merged = new Float32Array(this.dataset.width * this.dataset.height * 4);
+      var uint32Max = 4294967295;
+
+      for (var i = 0; i < images[0].length; i++) {
+        merged[i * 4] = images[0][i] / uint32Max;
+        merged[i * 4 + 1] = images[1][i] / uint32Max;
+        merged[i * 4 + 2] = images[2][i] / uint32Max;
+        merged[i * 4 + 3] = images[3][i] / uint32Max;
+      }
+
+      return merged;
+    }
+  }, {
+    key: "mergeImagesToTile_",
+    value: function mergeImagesToTile_(images) {
+      if (this.dataset.precision === 8) {
+        return images[0];
+      } else if (images.length === 2) {
+        return this.mergeImagesToTile16bit_(images);
+      } else {
+        return this.mergeImagesToTile32bit_(images);
+      }
+    }
+  }, {
+    key: "load",
+    value: function load(parallel) {
+      var _this = this;
+
+      var channelsPerImage = 32 / this.dataset.precision;
+      var imageCount = Math.ceil(this.dataset.features / channelsPerImage);
+      var imagesLoaded = 0;
+      var imagesPerTile = this.dataset.precision / 8;
+      var tileCount = Math.ceil(this.dataset.features / 4);
+      var tilesLoaded = 0;
+      var tilesCache = {};
+      var tilePromises = [];
+      var tileRAR = [];
+
+      for (var i = 0; i < tileCount; i++) {
+        tilePromises.push(new Promise(function (resolve, reject) {
+          tileRAR.push({
+            resolve: resolve,
+            reject: reject
+          });
+        }));
+      }
+
+      var gatherTile = function gatherTile(index, part, data) {
+        if (!tilesCache[index]) {
+          tilesCache[index] = Array(imagesPerTile).fill(undefined);
+        }
+
+        tilesCache[index][part] = data;
+        var complete = tilesCache[index].every(function (item) {
+          return item !== undefined;
+        });
+
+        if (complete) {
+          var tile = _this.mergeImagesToTile_(tilesCache[index]);
+
+          tileRAR[index].resolve([tile, index]);
+          delete tilesCache[index];
+        }
+      };
+
+      var fetchNextImage = function fetchNextImage() {
+        if (imagesLoaded < imageCount) {
+          var tileIndex = Math.floor(imagesLoaded / imagesPerTile);
+          var tilePartIndex = imagesLoaded % imagesPerTile;
+
+          _this.fetchImage_(imagesLoaded).then(_this.decodeImage_.bind(_this)).then(gatherTile.bind(_this, tileIndex, tilePartIndex)).then(fetchNextImage)["catch"](tileRAR[tileIndex].reject);
+
+          imagesLoaded += 1;
+        }
+      };
+
+      parallel = Math.min(parallel, imageCount);
+
+      while (parallel--) {
+        fetchNextImage();
+      }
+
+      return tilePromises;
+    }
+  }]);
+
+  return ImageHandler;
+}();
+
+
+
+/***/ }),
+
 /***/ "./resources/js/app.js":
 /*!*****************************!*\
   !*** ./resources/js/app.js ***!
@@ -59219,7 +59404,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _webgl_programs_SingleFeature__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ../webgl/programs/SingleFeature */ "./resources/js/webgl/programs/SingleFeature.js");
 /* harmony import */ var _loadingIndicator__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./loadingIndicator */ "./resources/js/components/loadingIndicator.js");
 /* harmony import */ var _colorScale__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ./colorScale */ "./resources/js/components/colorScale.js");
-/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../utils */ "./resources/js/utils.js");
+/* harmony import */ var _ImageHandler__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ../ImageHandler */ "./resources/js/ImageHandler.js");
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 
 
 
@@ -59269,39 +59462,19 @@ __webpack_require__.r(__webpack_exports__);
     fetchImages: function fetchImages() {
       var _this = this;
 
-      var count = Math.ceil(this.dataset.features / 4);
-      var promises = [];
-      var resolveAndReject = [];
-      var imageHandler = new _utils__WEBPACK_IMPORTED_MODULE_21__["ImageHandler"](this.dataset);
+      var imageHandler = new _ImageHandler__WEBPACK_IMPORTED_MODULE_21__["default"](this.dataset);
+      var parallel = 3;
+      var tilesLoaded = 0;
+      var promises = imageHandler.load(parallel).map(function (promise) {
+        return promise.then(function (args) {
+          var _this$handler;
 
-      while (count--) {
-        promises.push(new Promise(function (resolve, reject) {
-          resolveAndReject.push({
-            resolve: resolve,
-            reject: reject
-          });
-        }));
-      }
-
-      var loadImage = function loadImage() {
-        _this.loaded = 1 - resolveAndReject.length / promises.length;
-
-        if (resolveAndReject.length > 0) {
-          var rar = resolveAndReject.pop();
-          var index = resolveAndReject.length;
-          imageHandler.fetchImage(index).then(imageHandler.decodeImage.bind(imageHandler)).then(function (data) {
-            _this.handler.storeTile(data, index);
-          }).then(rar.resolve).then(loadImage)["catch"](rar.reject);
-        }
-      }; // Load images with multiple parallel connections.
-
-
-      var parallel = Math.min(3, promises.length);
-
-      while (parallel--) {
-        loadImage();
-      }
-
+          (_this$handler = _this.handler).storeTile.apply(_this$handler, _toConsumableArray(args));
+        }).then(function () {
+          tilesLoaded += 1;
+          _this.loaded = tilesLoaded / promises.length;
+        });
+      });
       return Promise.all(promises);
     },
     initializeCanvas: function initializeCanvas() {
@@ -59316,6 +59489,7 @@ __webpack_require__.r(__webpack_exports__);
         width: this.dataset.width,
         height: this.dataset.height,
         depth: this.dataset.features,
+        precision: this.dataset.precision,
         // Reserve units for the similarity, stretch intensity, color map and pixel vector textures.
         reservedUnits: 4
       });
@@ -59547,19 +59721,12 @@ function (_ImageStatic) {
 /*!*******************************!*\
   !*** ./resources/js/utils.js ***!
   \*******************************/
-/*! exports provided: mount, ImageHandler */
+/*! exports provided: mount */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "mount", function() { return mount; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ImageHandler", function() { return ImageHandler; });
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 var mount = function mount(id, vm) {
   window.addEventListener('load', function () {
     var element = document.getElementById(id);
@@ -59569,65 +59736,6 @@ var mount = function mount(id, vm) {
     }
   });
 };
-
-var ImageHandler =
-/*#__PURE__*/
-function () {
-  function ImageHandler(dataset) {
-    _classCallCheck(this, ImageHandler);
-
-    this.dataset = dataset;
-    this.gl = this.initializeGl();
-  }
-
-  _createClass(ImageHandler, [{
-    key: "initializeGl",
-    value: function initializeGl() {
-      var canvas = document.createElement('canvas');
-      var gl = canvas.getContext("webgl2");
-
-      if (!gl) {
-        throw 'Your browser does not support WebGL 2.';
-      }
-
-      gl.activeTexture(gl.TEXTURE0);
-      var texture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, gl.createFramebuffer());
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-      return gl;
-    }
-  }, {
-    key: "fetchImage",
-    value: function fetchImage(index) {
-      var image = new Image();
-      var promise = new Promise(function (resolve, reject) {
-        image.addEventListener('load', function () {
-          resolve(image);
-        });
-        image.addEventListener('error', reject);
-      });
-      image.src = "".concat(this.dataset.url, "/").concat(index, ".png");
-      return promise;
-    }
-  }, {
-    key: "decodeImage_",
-    value: function decodeImage_(gl, image) {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-      gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-      var data = new Uint8Array(image.width * image.height * 4);
-      gl.readPixels(0, 0, image.width, image.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
-      return data;
-    }
-  }, {
-    key: "decodeImage",
-    value: function decodeImage(image) {
-      return this.decodeImage_(this.gl, image);
-    }
-  }]);
-
-  return ImageHandler;
-}();
 
 
 
@@ -59705,7 +59813,8 @@ function () {
     this.dataset_ = {
       width: options.width === undefined ? 0 : options.width,
       height: options.height === undefined ? 0 : options.height,
-      depth: options.depth === undefined ? 0 : options.depth
+      depth: options.depth === undefined ? 0 : options.depth,
+      precision: options.precision === undefined ? 0 : options.precision
     };
     this.props_ = this.getProps_(this.gl_, this.dataset_, options);
     this.tilesToStore_ = {};
@@ -59761,7 +59870,7 @@ function () {
         reservedUnits: options.reservedUnits === undefined ? 0 : options.reservedUnits,
         // Total number of tiles.
         tiles: Math.ceil(dataset.depth / 4),
-        // Number of calid channels of the last tile as the dataset depth may not be
+        // Number of valid channels of the last tile as the dataset depth may not be
         // divisible by 4.
         depthLastTile: dataset.depth % 4
       };
@@ -59982,19 +60091,64 @@ function () {
       var _this2 = this;
 
       programs.forEach(function (program) {
-        gl.useProgram(program.getPointer());
+        gl.useProgram(program.getPointer()); // let date = Date.now();
+
         program.beforeRender(gl, _this2);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        program.afterRender(gl, _this2);
+        program.afterRender(gl, _this2); // console.log(program.constructor.name, Date.now() - date);
       });
+    }
+  }, {
+    key: "initializeTexture_",
+    value: function initializeTexture_(gl, texture, dataset, props) {
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      var width = props.colsPerTexture * dataset.width;
+      var height = props.rowsPerTexture * dataset.height;
+      var format;
+      var type;
+      var emptyArray;
+
+      if (dataset.precision === 8) {
+        format = gl.RGBA;
+        type = gl.UNSIGNED_BYTE;
+        emptyArray = new Uint8Array(width * height * 4);
+      } else if (dataset.precision === 16) {
+        format = gl.RGBA16F;
+        type = gl.HALF_FLOAT;
+        emptyArray = new Float32Array(width * height * 4);
+      } else {
+        format = gl.RGBA32F;
+        type = gl.FLOAT;
+        emptyArray = new Float32Array(width * height * 4);
+      }
+
+      gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, gl.RGBA, type, emptyArray);
+    }
+  }, {
+    key: "storeTileSubImage_",
+    value: function storeTileSubImage_(gl, dataset, x, y, width, height, tile) {
+      var type;
+
+      if (dataset.precision === 8) {
+        type = gl.UNSIGNED_BYTE;
+      } else if (dataset.precision === 16) {
+        type = gl.HALF_FLOAT;
+      } else {
+        type = gl.FLOAT;
+      }
+
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA, type, tile);
     }
   }, {
     key: "storeTile_",
     value: function storeTile_(gl, tile, index, dataset, props) {
       var _this3 = this;
 
-      if (!(tile instanceof Uint8Array)) {
+      if (dataset.precision === 8 && !(tile instanceof Uint8Array)) {
         throw new WebglError('Each tile image must be a Uint8Array.');
+      } else if (dataset.precision !== 8 && !(tile instanceof Float32Array)) {
+        throw new WebglError('Each tile image must be a Float32Array.');
       }
 
       var textureNumber = Math.floor(index / props.tilesPerTexture);
@@ -60011,16 +60165,12 @@ function () {
         gl.bindTexture(gl.TEXTURE_2D, texture);
 
         if (!_this3.initializedTextures_[textureNumber]) {
-          var width = props.colsPerTexture * dataset.width;
-          var height = props.rowsPerTexture * dataset.height; // Allocate needed memory with a blank texture. Parameters are:
-          // target, level of detail, internal format, width,
-          // height, border width, source format, texture data type, pixel data
+          _this3.initializeTexture_(gl, texture, dataset, props);
 
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4));
           _this3.initializedTextures_[textureNumber] = true;
         }
 
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, indexOnTexture % props.colsPerTexture * dataset.width, Math.floor(indexOnTexture / props.colsPerTexture) * dataset.height, dataset.width, dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, tile);
+        _this3.storeTileSubImage_(gl, dataset, indexOnTexture % props.colsPerTexture * dataset.width, Math.floor(indexOnTexture / props.colsPerTexture) * dataset.height, dataset.width, dataset.height, tile);
       });
     }
   }, {
@@ -60131,12 +60281,12 @@ function () {
     }
   }, {
     key: "storeTile",
-    value: function storeTile(image, index) {
+    value: function storeTile(tile, index) {
       if (this.tilesToStore_[index] === undefined) {
         throw new WebglError("Unexpected tile index ".concat(index, "."));
       }
 
-      this.storeTile_(this.gl_, image, index, this.dataset_, this.props_);
+      this.storeTile_(this.gl_, tile, index, this.dataset_, this.props_);
       delete this.tilesToStore_[index];
     }
   }, {
@@ -60365,6 +60515,7 @@ function (_Program) {
   }, {
     key: "afterRender",
     value: function afterRender(gl, handler) {
+      // TODO: Do this more efficiently. Get the min/max with min/max pooling shaders?
       gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.FLOAT, this.intensities);
       this.intensityStats.max = 0;
       this.intensityStats.min = 1;

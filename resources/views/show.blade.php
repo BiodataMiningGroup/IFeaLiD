@@ -9,7 +9,7 @@
             <img src="{{asset('logo.svg')}}" width="30" height="30" class="d-inline-block align-top" alt=""> vis4deep
         </a>
         <span class="navbar-text text-light font-weight-bold">
-            {{$dataset->name}}
+            {{$dataset->name}} <span class="badge badge-secondary" title="{{$dataset->precision}} bit precision">{{$dataset->precision}}</span>
         </span>
         <span class="action-buttons">
             @if ($editable)

@@ -21,6 +21,7 @@ class DatasetTest extends TestCase
         $this->assertNotNull($d->width);
         $this->assertNotNull($d->height);
         $this->assertNotNull($d->features);
+        $this->assertNotNull($d->precision);
     }
 
     public function testHiddenAttributes()

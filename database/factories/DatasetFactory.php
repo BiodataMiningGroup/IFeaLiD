@@ -11,5 +11,6 @@ $factory->define(Dataset::class, function (Faker $faker) {
         'width' => $faker->randomNumber,
         'height' => $faker->randomNumber,
         'features' => $faker->randomNumber,
+        'precision' => $faker->randomElement([8, 16, 32]),
     ];
 });

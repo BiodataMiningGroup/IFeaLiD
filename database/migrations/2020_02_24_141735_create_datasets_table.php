@@ -22,6 +22,7 @@ class CreateDatasetsTable extends Migration
             $table->integer('width');
             $table->integer('height');
             $table->integer('features');
+            $table->enum('precision', [8, 16, 32]);
         });
     }
 

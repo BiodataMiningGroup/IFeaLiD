@@ -53,9 +53,50 @@ class DatasetControllerTest extends TestCase
         $this->assertEquals(1024, $d->width);
         $this->assertEquals(684, $d->height);
         $this->assertEquals(4, $d->features);
+        $this->assertEquals(8, $d->precision);
 
         $this->assertTrue($local->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip"));
         $this->assertTrue($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
+    }
+
+    public function testStore16bit()
+    {
+        Honeypot::disable();
+        $local = Storage::fake('local');
+        $public = Storage::fake('public');
+        $this->assertEquals(0, Dataset::count());
+
+        $file = $this->getFile('dataset_16bit.zip');
+        $response = $this->post("/api/datasets", [
+            'file' => $file,
+            'homepage' => 'random',
+        ]);
+
+        $d = Dataset::first();
+        $this->assertNotNull($d);
+        $response->assertRedirect("e/{$d->secret_slug}");
+        $this->assertEquals(4, $d->features);
+        $this->assertEquals(16, $d->precision);
+    }
+
+    public function testStore32bit()
+    {
+        Honeypot::disable();
+        $local = Storage::fake('local');
+        $public = Storage::fake('public');
+        $this->assertEquals(0, Dataset::count());
+
+        $file = $this->getFile('dataset_32bit.zip');
+        $response = $this->post("/api/datasets", [
+            'file' => $file,
+            'homepage' => 'random',
+        ]);
+
+        $d = Dataset::first();
+        $this->assertNotNull($d);
+        $response->assertRedirect("e/{$d->secret_slug}");
+        $this->assertEquals(2, $d->features);
+        $this->assertEquals(32, $d->precision);
     }
 
     public function testStoreValidateZipFileNumFiles()

@@ -19,7 +19,7 @@ import PixelVectorProgram from '../webgl/programs/PixelVector';
 import SingleFeatureProgram from '../webgl/programs/SingleFeature';
 import loadingIndicator from './loadingIndicator';
 import colorScale from './colorScale';
-import {ImageHandler} from '../utils';
+import ImageHandler from '../ImageHandler';
 
 export default {
     template: `
@@ -53,39 +53,19 @@ export default {
     },
     methods: {
         fetchImages() {
-            let count = Math.ceil(this.dataset.features / 4);
-            let promises = [];
-            let resolveAndReject = [];
             let imageHandler = new ImageHandler(this.dataset);
+            let parallel = 3;
+            let tilesLoaded = 0;
 
-            while (count--) {
-                promises.push(new Promise(function (resolve, reject) {
-                    resolveAndReject.push({resolve, reject});
-                }));
-            }
-
-            let loadImage = () => {
-                this.loaded = 1 - (resolveAndReject.length / promises.length);
-                if (resolveAndReject.length > 0) {
-                    let rar = resolveAndReject.pop();
-                    let index = resolveAndReject.length;
-                    imageHandler.fetchImage(index)
-                        .then(imageHandler.decodeImage.bind(imageHandler))
-                        .then((data) => {
-                            this.handler.storeTile(data, index);
-                        })
-                        .then(rar.resolve)
-                        .then(loadImage)
-                        .catch(rar.reject);
-
-                }
-            };
-
-            // Load images with multiple parallel connections.
-            let parallel = Math.min(3, promises.length);
-            while (parallel--) {
-                loadImage();
-            }
+            let promises = imageHandler.load(parallel).map((promise) => {
+                return promise.then((args) => {
+                        this.handler.storeTile(...args);
+                    })
+                    .then(() => {
+                        tilesLoaded += 1
+                        this.loaded = tilesLoaded / promises.length;
+                    });
+            });
 
             return Promise.all(promises);
         },
@@ -102,6 +82,7 @@ export default {
                 width: this.dataset.width,
                 height: this.dataset.height,
                 depth: this.dataset.features,
+                precision: this.dataset.precision,
                 // Reserve units for the similarity, stretch intensity, color map and pixel vector textures.
                 reservedUnits: 4,
             });

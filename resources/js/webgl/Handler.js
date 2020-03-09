@@ -20,6 +20,7 @@ export default class Handler {
             width: options.width === undefined ? 0 : options.width,
             height: options.height === undefined ? 0 : options.height,
             depth: options.depth === undefined ? 0 : options.depth,
+            precision: options.precision === undefined ? 0 : options.precision,
         };
 
         this.props_ = this.getProps_(this.gl_, this.dataset_, options);
@@ -75,7 +76,7 @@ export default class Handler {
             reservedUnits: options.reservedUnits === undefined ? 0 : options.reservedUnits,
             // Total number of tiles.
             tiles: Math.ceil(dataset.depth / 4),
-            // Number of calid channels of the last tile as the dataset depth may not be
+            // Number of valid channels of the last tile as the dataset depth may not be
             // divisible by 4.
             depthLastTile: dataset.depth % 4,
         };
@@ -314,15 +315,59 @@ export default class Handler {
     renderSync_(gl, programs) {
         programs.forEach((program) => {
             gl.useProgram(program.getPointer());
+            // let date = Date.now();
             program.beforeRender(gl, this);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
             program.afterRender(gl, this);
+            // console.log(program.constructor.name, Date.now() - date);
         });
     }
 
+    initializeTexture_(gl, texture, dataset, props) {
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        let width = props.colsPerTexture * dataset.width;
+        let height = props.rowsPerTexture * dataset.height;
+        let format;
+        let type;
+        let emptyArray;
+
+        if (dataset.precision === 8) {
+            format = gl.RGBA;
+            type = gl.UNSIGNED_BYTE;
+            emptyArray = new Uint8Array(width * height * 4);
+        } else if (dataset.precision === 16) {
+            format = gl.RGBA16F;
+            type = gl.HALF_FLOAT;
+            emptyArray = new Float32Array(width * height * 4);
+        } else {
+            format = gl.RGBA32F;
+            type = gl.FLOAT;
+            emptyArray = new Float32Array(width * height * 4);
+        }
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, gl.RGBA, type, emptyArray);
+    }
+
+    storeTileSubImage_(gl, dataset, x, y, width, height, tile) {
+        let type;
+
+        if (dataset.precision === 8) {
+            type = gl.UNSIGNED_BYTE;
+        } else if (dataset.precision === 16) {
+            type = gl.HALF_FLOAT;
+        } else {
+            type = gl.FLOAT;
+        }
+
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA, type, tile);
+    }
+
     storeTile_(gl, tile, index, dataset, props) {
-        if (!(tile instanceof Uint8Array)) {
-            throw new WebglError('Each tile image must be a Uint8Array.')
+        if (dataset.precision === 8 && !(tile instanceof Uint8Array)) {
+            throw new WebglError('Each tile image must be a Uint8Array.');
+        } else if (dataset.precision !== 8 && !(tile instanceof Float32Array)) {
+            throw new WebglError('Each tile image must be a Float32Array.');
         }
 
         let textureNumber = Math.floor(index / props.tilesPerTexture);
@@ -338,24 +383,17 @@ export default class Handler {
             gl.bindTexture(gl.TEXTURE_2D, texture);
 
             if (!this.initializedTextures_[textureNumber]) {
-                let width = props.colsPerTexture * dataset.width;
-                let height = props.rowsPerTexture * dataset.height;
-
-                // Allocate needed memory with a blank texture. Parameters are:
-                // target, level of detail, internal format, width,
-                // height, border width, source format, texture data type, pixel data
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(width * height * 4))
+                this.initializeTexture_(gl, texture, dataset, props);
                 this.initializedTextures_[textureNumber] = true;
             }
 
-            gl.texSubImage2D(gl.TEXTURE_2D,
-                0,
+            this.storeTileSubImage_(
+                gl,
+                dataset,
                 (indexOnTexture % props.colsPerTexture) * dataset.width,
                 Math.floor(indexOnTexture / props.colsPerTexture) * dataset.height,
                 dataset.width,
                 dataset.height,
-                gl.RGBA,
-                gl.UNSIGNED_BYTE,
                 tile
             );
         });
@@ -459,12 +497,12 @@ export default class Handler {
         this.programs_.push(this.addProgram_(this.gl_, program));
     }
 
-    storeTile(image, index) {
+    storeTile(tile, index) {
         if (this.tilesToStore_[index] === undefined) {
             throw new WebglError(`Unexpected tile index ${index}.`);
         }
 
-        this.storeTile_(this.gl_, image, index, this.dataset_, this.props_);
+        this.storeTile_(this.gl_, tile, index, this.dataset_, this.props_);
         delete this.tilesToStore_[index];
     }
 
