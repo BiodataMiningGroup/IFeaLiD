@@ -75334,7 +75334,12 @@ function () {
       depth: options.depth === undefined ? 0 : options.depth
     };
     this.props_ = this.getProps_(this.gl_, this.dataset_, options);
-    this.tilesToStore_ = this.props_.tiles;
+    this.tilesToStore_ = {};
+
+    for (var i = 0; i < this.props_.tiles; i++) {
+      this.tilesToStore_[i] = null;
+    }
+
     this.initializedTextures_ = new Array(this.props_.requiredUnits);
     this.initializedTextures_.fill(false);
     this.programs_ = [];
@@ -75747,14 +75752,20 @@ function () {
   }, {
     key: "storeTile",
     value: function storeTile(image, index) {
+      if (this.tilesToStore_[index] === undefined) {
+        throw new WebglError("Unexpected tile index ".concat(index, "."));
+      }
+
       this.storeTile_(this.gl_, image, index, this.dataset_, this.props_);
-      this.tilesToStore_ -= 1;
+      delete this.tilesToStore_[index];
     }
   }, {
     key: "renderSync",
     value: function renderSync(programs) {
-      if (this.tilesToStore_ > 0) {
-        throw new WebglError("The tiles must be stored first (".concat(this.tilesToStore_, " remaining)."));
+      var remainingTiles = Object.keys(this.tilesToStore_).length;
+
+      if (remainingTiles > 0) {
+        throw new WebglError("The tiles must be stored first (".concat(remainingTiles, " remaining)."));
       }
 
       this.renderSync_(this.gl_, programs || []);
@@ -76534,8 +76545,8 @@ var FIRE = new Uint8Array([0, 0, 0, 0, 0, 7, 0, 0, 15, 0, 0, 22, 0, 0, 30, 0, 0,
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/m/data/biodtmin/phd/rtmfe/resources/js/app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! /home/m/data/biodtmin/phd/rtmfe/resources/sass/app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! /home/m/data/biodtmin/phd/vis4deep/resources/js/app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! /home/m/data/biodtmin/phd/vis4deep/resources/sass/app.scss */"./resources/sass/app.scss");
 
 
 /***/ }),

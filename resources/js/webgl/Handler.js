@@ -23,7 +23,10 @@ export default class Handler {
         };
 
         this.props_ = this.getProps_(this.gl_, this.dataset_, options);
-        this.tilesToStore_ = this.props_.tiles;
+        this.tilesToStore_ = {};
+        for (let i = 0; i < this.props_.tiles; i++) {
+            this.tilesToStore_[i] = null;
+        }
         this.initializedTextures_ = new Array(this.props_.requiredUnits);
         this.initializedTextures_.fill(false);
 
@@ -452,13 +455,18 @@ export default class Handler {
     }
 
     storeTile(image, index) {
+        if (this.tilesToStore_[index] === undefined) {
+            throw new WebglError(`Unexpected tile index ${index}.`);
+        }
+
         this.storeTile_(this.gl_, image, index, this.dataset_, this.props_);
-        this.tilesToStore_ -= 1;
+        delete this.tilesToStore_[index];
     }
 
     renderSync(programs) {
-        if (this.tilesToStore_ > 0) {
-            throw new WebglError(`The tiles must be stored first (${this.tilesToStore_} remaining).`);
+        let remainingTiles = Object.keys(this.tilesToStore_).length;
+        if (remainingTiles > 0) {
+            throw new WebglError(`The tiles must be stored first (${remainingTiles} remaining).`);
         }
 
         this.renderSync_(this.gl_, programs || []);
