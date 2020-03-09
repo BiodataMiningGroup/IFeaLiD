@@ -1,9 +1,13 @@
+#version 300 es
+
 precision mediump float;
 
-varying vec2 v_texture_position;
+in vec2 v_texture_position;
 
 uniform vec2 u_mouse_position;
 uniform float u_texture_dimension;
+
+out vec4 outColor;
 
 <%=TEXTURE_3D=%>
 
@@ -13,5 +17,5 @@ void main() {
     // to shift the coordinates to the left corner of the pixel.
     float tile_number = floor(v_texture_position.t * u_texture_dimension) * u_texture_dimension + floor(v_texture_position.s * u_texture_dimension);
 
-    gl_FragColor = texture3D(u_mouse_position, tile_number);
+    outColor = texture3D(u_mouse_position, tile_number);
 }

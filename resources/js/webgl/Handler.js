@@ -153,7 +153,7 @@ export default class Handler {
 
         this.forEachTexture_(function (name, index, absIndex) {
             output += `if (sampler_index == ${numberToFloatString(absIndex)}) {
-                return texture2D(${name}, coords_2d);
+                return texture(${name}, coords_2d);
             }
             `;
         });
@@ -439,9 +439,13 @@ export default class Handler {
             throw new WebglError('A program must be a Program');
         }
 
-        let vertexShader = this.createVertexShader_(gl, program.getVertexShaderSource());
-        let fragmentShader = this.createFragmentShader_(gl, program.getFragmentShaderSource(), this.props_);
-        let programPointer = this.createShaderProgram_(gl, vertexShader, fragmentShader);
+        try {
+            let vertexShader = this.createVertexShader_(gl, program.getVertexShaderSource());
+            let fragmentShader = this.createFragmentShader_(gl, program.getFragmentShaderSource(), this.props_);
+            var programPointer = this.createShaderProgram_(gl, vertexShader, fragmentShader);
+        } catch (e) {
+            throw new WebglError(`Error compiling program ${program.constructor.name}. ${e}`);
+        }
 
         gl.useProgram(programPointer);
         program.setPointer(programPointer);

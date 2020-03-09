@@ -1,9 +1,13 @@
+#version 300 es
+
 precision mediump float;
 
-varying vec2 v_texture_position;
+in vec2 v_texture_position;
 
 uniform vec2 u_mouse_position;
 uniform float u_normalization;
+
+out vec4 outColor;
 
 //uniform float u_channel_mask_dimension;
 //uniform float u_inv_channel_mask_dimension;
@@ -19,7 +23,7 @@ const vec4 ZEROS = vec4(0);
 void main() {
     // if masked by the region mask, don't do anything
     /*
-    if (texture2D(u_region_mask, v_texture_position).a == 0.0) {
+    if (texture(u_region_mask, v_texture_position).a == 0.0) {
         gl_FragColor = ZEROS;
         return;
     }
@@ -32,13 +36,13 @@ void main() {
 
     // cummulating the squared length of this pixels vector
     float currentLength = 0.0;
-    // cummulating the squared length of the sample pixels vector
-    float sampleLength = 0.0;
+    // cummulating the squared length of the reference pixels vector
+    float referenceLength = 0.0;
 
     // temporary texture values of current position
     vec4 current;
-    // temporary texture values of sample position
-    vec4 sample;
+    // temporary texture values of reference position
+    vec4 reference;
 
     // the index of the current tile
     float tile;
@@ -48,7 +52,7 @@ void main() {
     // vec4 channel_mask;
 
     // the row-major index of the current tile on it's texture
-    float index_on_sampler;
+    float index_on_referencer;
     // the column in which the current tile lies on the texture
     float column;
     // the row in which the current tile lies on the texture
@@ -58,8 +62,8 @@ void main() {
 
     // the 2d coordinates of the current position on the correct texture
     vec2 coords_2d_current;
-    // the 2d coordinates of the sample position on the correct texture
-    vec2 coords_2d_sample;
+    // the 2d coordinates of the reference position on the correct texture
+    vec2 coords_2d_reference;
 
     for (int i = 0; i < <%=TILES=%>; i++) {
         tile = float(i);
@@ -67,17 +71,17 @@ void main() {
         mask_position.s = mod(tile, u_channel_mask_dimension);
         mask_position.t = floor(tile * u_inv_channel_mask_dimension);
         mask_position *= u_inv_channel_mask_dimension;
-        channel_mask = texture2D(u_channel_mask, mask_position);
+        channel_mask = texture(u_channel_mask, mask_position);
         */
 
         // check if any channels of this tile are to be computed
         //if (dot(channel_mask, ONES) == 0.0) continue;
 
-        index_on_sampler = mod(tile, <%=TILES_PER_TEXTURE=%>);
-        column = mod(index_on_sampler, <%=TILE_COLUMNS=%>);
-        row = floor(index_on_sampler / <%=TILE_COLUMNS=%>);
+        index_on_referencer = mod(tile, <%=TILES_PER_TEXTURE=%>);
+        column = mod(index_on_referencer, <%=TILE_COLUMNS=%>);
+        row = floor(index_on_referencer / <%=TILE_COLUMNS=%>);
 
-        coords_2d_sample = vec2(
+        coords_2d_reference = vec2(
             <%=TILE_WIDTH=%> * (column + u_mouse_position.x),
             <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)
         );
@@ -94,24 +98,24 @@ void main() {
         // get rgba of the pixel to compare; filtered by the channel mask and
         // get rgba of the position of this pixel; filtered by the channel mask
         <%=DYNAMIC_SAMPLER_QUERIES
-        //sample = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_sample);
-        //current = channel_mask * texture2D(<%=SAMPLER=%>, coords_2d_current);
-        sample = texture2D(<%=SAMPLER=%>, coords_2d_sample);
-        current = texture2D(<%=SAMPLER=%>, coords_2d_current);
+        //reference = channel_mask * texture(<%=SAMPLER=%>, coords_2d_reference);
+        //current = channel_mask * texture(<%=SAMPLER=%>, coords_2d_current);
+        reference = texture(<%=SAMPLER=%>, coords_2d_reference);
+        current = texture(<%=SAMPLER=%>, coords_2d_current);
         =%>
 
         currentLength += dot(current, current);
-        sampleLength += dot(sample, sample);
-        angle += dot(current, sample);
+        referenceLength += dot(reference, reference);
+        angle += dot(current, reference);
     }
 
     // if the intensities of this fragment are all 0, don't draw it
     if (currentLength == 0.0) {
-        gl_FragColor = ZEROS;
+        outColor = ZEROS;
         return;
     }
 
-    angle *= inversesqrt(currentLength * sampleLength);
+    angle *= inversesqrt(currentLength * referenceLength);
 
     // Normalize and clip angle to [0, 1].
     angle = acos(angle) * u_normalization;
@@ -120,5 +124,5 @@ void main() {
     // Invert angle because a lower angle should signify a higher similarity.
     angle = 1.0 - angle;
 
-    gl_FragColor = vec4(angle);
+    outColor = vec4(angle);
 }
