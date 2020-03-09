@@ -24,7 +24,7 @@ export default class StretchIntensity extends Program {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
         this.outputTexture = handler.getTexture('stretchIntensity');
         gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.dataset.width, this.dataset.height, 0, gl.RED, gl.FLOAT, null);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -37,8 +37,8 @@ export default class StretchIntensity extends Program {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, this.inputTexture);
 
-        gl.uniform1f(this.minIntensityPointer, this.intensityStats.min / 255);
-        gl.uniform1f(this.maxIntensityPointer, this.intensityStats.max / 255);
+        gl.uniform1f(this.minIntensityPointer, this.intensityStats.min);
+        gl.uniform1f(this.maxIntensityPointer, this.intensityStats.max);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
     }

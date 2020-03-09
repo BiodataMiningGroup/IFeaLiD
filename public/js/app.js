@@ -44375,7 +44375,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform sampler2D u_intensities;\n\nuniform float u_min_intensity;\nuniform float u_max_intensity;\n\nvoid main() {\n   float intensity = texture2D(u_intensities, v_texture_position).r;\n   intensity = (intensity - u_min_intensity) / (u_max_intensity - u_min_intensity);\n\n   gl_FragColor = vec4(vec3(intensity), 1.0);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("precision mediump float;\n\nvarying vec2 v_texture_position;\n\nuniform sampler2D u_intensities;\n\nuniform float u_min_intensity;\nuniform float u_max_intensity;\n\nvoid main() {\n   float intensity = texture2D(u_intensities, v_texture_position).r;\n   intensity = (intensity - u_min_intensity) / (u_max_intensity - u_min_intensity);\n\n   gl_FragColor = vec4(intensity);\n}\n");
 
 /***/ }),
 
@@ -58930,13 +58930,14 @@ __webpack_require__.r(__webpack_exports__);
   },
   data: function data() {
     return {
+      absoluteHeight: 256,
       minIntensity: 0,
-      maxIntensity: 255
+      maxIntensity: 1
     };
   },
   computed: {
     fillTopStyle: function fillTopStyle() {
-      var height = 255 - this.maxIntensity;
+      var height = this.absoluteHeight * (1 - this.maxIntensity);
 
       if (height === 0) {
         return 'display: none;';
@@ -58949,17 +58950,20 @@ __webpack_require__.r(__webpack_exports__);
       };
     },
     canvasStyle: function canvasStyle() {
-      return "height: ".concat(this.maxIntensity - this.minIntensity, "px");
+      var height = this.absoluteHeight * (this.maxIntensity - this.minIntensity);
+      return "height: ".concat(height, "px");
     },
     fillBottomStyle: function fillBottomStyle() {
-      if (this.minIntensity === 0) {
+      var height = this.absoluteHeight * this.minIntensity;
+
+      if (this.height === 0) {
         return 'display: none;';
       }
 
       return {
         'background-color': this.getColorScaleColor(0),
         'border-top-color': this.getColorScaleColor(255),
-        height: "".concat(this.minIntensity, "px")
+        height: "".concat(height, "px")
       };
     }
   },
@@ -58989,7 +58993,7 @@ __webpack_require__.r(__webpack_exports__);
     this.canvas = this.$refs.canvas;
     this.ctx = this.canvas.getContext('2d');
     this.canvas.width = 1;
-    this.canvas.height = 256;
+    this.canvas.height = this.absoluteHeight;
     this.updateCanvas();
   }
 });
@@ -59137,7 +59141,7 @@ __webpack_require__.r(__webpack_exports__);
       ctx.moveTo(startX, startY);
 
       for (var i = 0; i < vector.length; i++) {
-        barWidth = width * vector[i] / 255;
+        barWidth = width * vector[i];
         ctx.lineTo(startX + factor * barWidth, startY + i * barHeight);
         ctx.lineTo(startX + factor * barWidth, startY + (i + 1) * barHeight);
       }
@@ -59739,13 +59743,14 @@ function () {
         throw new WebglError('Your browser does not support WebGL.');
       }
 
-      canvas.addEventListener('webglcontextlost', this.handleContextLost);
-      var gl = canvas.getContext('webgl', attributes) || canvas.getContext('experimental-webgl', attributes);
+      var gl = canvas.getContext('webgl2', attributes);
+      gl.getExtension("EXT_color_buffer_float");
 
       if (!gl) {
-        throw new WebglError('Your browser does not support WebGL.');
+        throw new WebglError('Your browser does not support WebGL 2.');
       }
 
+      canvas.addEventListener('webglcontextlost', this.handleContextLost);
       return gl;
     }
   }, {
@@ -60322,7 +60327,7 @@ function (_Program) {
     _this.dataset = dataset;
     _this.framebuffer = null;
     _this.outputTexture = null;
-    _this.intensities = new Uint8Array(_this.dataset.width * _this.dataset.height * 4);
+    _this.intensities = new Float32Array(_this.dataset.width * _this.dataset.height * 4);
     _this.intensityStats = {
       min: 0,
       max: 0
@@ -60341,7 +60346,7 @@ function (_Program) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.outputTexture = handler.getTexture('intensity');
       gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.dataset.width, this.dataset.height, 0, gl.RED, gl.FLOAT, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -60355,11 +60360,11 @@ function (_Program) {
   }, {
     key: "afterRender",
     value: function afterRender(gl, handler) {
-      gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.UNSIGNED_BYTE, this.intensities);
+      gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.FLOAT, this.intensities);
       this.intensityStats.max = 0;
-      this.intensityStats.min = 255;
+      this.intensityStats.min = 1;
 
-      for (var i = this.intensities.length - 1; i >= 0; i -= 4) {
+      for (var i = 0; i < this.intensities.length; i += 4) {
         this.intensityStats.max = Math.max(this.intensities[i], this.intensityStats.max);
         this.intensityStats.min = Math.min(this.intensities[i], this.intensityStats.min);
       }
@@ -60437,7 +60442,7 @@ function (_Program) {
     _this.mousePositionPointer = null;
     _this.dataset = dataset;
     _this.framebuffer = null;
-    _this.pixelVector = new Uint8Array(_this.textureDimension * _this.textureDimension * 4);
+    _this.pixelVector = new Float32Array(_this.textureDimension * _this.textureDimension * 4);
     return _this;
   }
 
@@ -60455,7 +60460,7 @@ function (_Program) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.texture = handler.getTexture('pixelVector');
       gl.bindTexture(gl.TEXTURE_2D, this.texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureDimension, this.textureDimension, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, this.textureDimension, this.textureDimension, 0, gl.RGBA, gl.FLOAT, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -60471,7 +60476,7 @@ function (_Program) {
   }, {
     key: "afterRender",
     value: function afterRender(gl, handler) {
-      gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.UNSIGNED_BYTE, this.pixelVector);
+      gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.FLOAT, this.pixelVector);
       gl.viewport(0, 0, this.dataset.width, this.dataset.height);
     }
   }, {
@@ -60842,7 +60847,7 @@ function (_Program) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.outputTexture = handler.getTexture('stretchIntensity');
       gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.dataset.width, this.dataset.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.dataset.width, this.dataset.height, 0, gl.RED, gl.FLOAT, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -60854,8 +60859,8 @@ function (_Program) {
     value: function beforeRender(gl, handler) {
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, this.inputTexture);
-      gl.uniform1f(this.minIntensityPointer, this.intensityStats.min / 255);
-      gl.uniform1f(this.maxIntensityPointer, this.intensityStats.max / 255);
+      gl.uniform1f(this.minIntensityPointer, this.intensityStats.min);
+      gl.uniform1f(this.maxIntensityPointer, this.intensityStats.max);
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
     }
   }, {

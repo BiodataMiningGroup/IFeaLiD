@@ -72,7 +72,7 @@ export default {
             ctx.beginPath();
             ctx.moveTo(startX, startY);
             for (var i = 0; i < vector.length; i++) {
-                barWidth = width * vector[i] / 255;
+                barWidth = width * vector[i];
                 ctx.lineTo(startX + factor * barWidth, startY + i * barHeight);
                 ctx.lineTo(startX + factor * barWidth, startY + (i + 1) * barHeight);
             }

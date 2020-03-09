@@ -16,13 +16,14 @@ export default {
     },
     data () {
         return {
+            absoluteHeight: 256,
             minIntensity: 0,
-            maxIntensity: 255,
+            maxIntensity: 1,
         };
     },
     computed: {
         fillTopStyle() {
-            let height = 255 - this.maxIntensity;
+            let height = this.absoluteHeight * (1 - this.maxIntensity);
 
             if (height === 0) {
                 return 'display: none;';
@@ -35,17 +36,21 @@ export default {
             };
         },
         canvasStyle() {
-            return `height: ${this.maxIntensity - this.minIntensity}px`;
+            let height = this.absoluteHeight * (this.maxIntensity - this.minIntensity);
+
+            return `height: ${height}px`;
         },
         fillBottomStyle() {
-            if (this.minIntensity === 0) {
+            let height = this.absoluteHeight * this.minIntensity;
+
+            if (this.height === 0) {
                 return 'display: none;';
             }
 
             return {
                 'background-color': this.getColorScaleColor(0),
                 'border-top-color': this.getColorScaleColor(255),
-                height: `${this.minIntensity}px`,
+                height: `${height}px`,
             };
         },
     },
@@ -77,7 +82,7 @@ export default {
         this.canvas = this.$refs.canvas;
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = 1;
-        this.canvas.height = 256;
+        this.canvas.height = this.absoluteHeight;
         this.updateCanvas();
     },
 };

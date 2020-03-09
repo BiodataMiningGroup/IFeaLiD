@@ -14,7 +14,7 @@ export default class PixelVector extends Program {
         this.mousePositionPointer = null;
         this.dataset = dataset;
         this.framebuffer = null;
-        this.pixelVector = new Uint8Array(this.textureDimension * this.textureDimension * 4);
+        this.pixelVector = new Float32Array(this.textureDimension * this.textureDimension * 4);
     }
 
     initialize(gl, handler) {
@@ -33,7 +33,7 @@ export default class PixelVector extends Program {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
         this.texture = handler.getTexture('pixelVector');
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.textureDimension, this.textureDimension, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, this.textureDimension, this.textureDimension, 0, gl.RGBA, gl.FLOAT, null);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture, 0);
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -47,7 +47,7 @@ export default class PixelVector extends Program {
     }
 
     afterRender(gl, handler) {
-        gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.UNSIGNED_BYTE, this.pixelVector);
+        gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.FLOAT, this.pixelVector);
         gl.viewport(0, 0, this.dataset.width, this.dataset.height);
     }
 
