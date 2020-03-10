@@ -23,6 +23,7 @@ class CreateDatasetsTable extends Migration
             $table->integer('height');
             $table->integer('features');
             $table->enum('precision', [8, 16, 32]);
+            $table->boolean('overlay');
         });
     }
 

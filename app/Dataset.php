@@ -47,6 +47,7 @@ class Dataset extends Model
         'height',
         'features',
         'precision',
+        'overlay',
     ];
 
     /**
@@ -59,6 +60,7 @@ class Dataset extends Model
         'height' => 'int',
         'features' => 'int',
         'precision' => 'int',
+        'overlay' => 'bool',
     ];
 
     /**

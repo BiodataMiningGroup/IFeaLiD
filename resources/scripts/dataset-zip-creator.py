@@ -7,11 +7,12 @@ from zipfile import ZipFile
 import io
 
 class ZipCreator(object):
-    def __init__(self, file, name='', precision=8):
+    def __init__(self, file, name='', precision=8, overlay=''):
         self.file = os.path.abspath(file)
         self.out_file = '{}.{}.zip'.format(self.file, precision)
         self.name = os.path.basename(file) if name == '' else name
         self.precision = precision
+        self.overlay = overlay
 
     def create8_(self, data, zip_file, metadata):
         uint8_max = np.iinfo(np.uint8).max
@@ -71,17 +72,21 @@ class ZipCreator(object):
             data = npz_file[npz_file.files[0]]
 
         zip_file = ZipFile(self.out_file, 'w')
+        has_overlay = self.overlay != ''
+
         metadata = {
             'name': self.name,
-            'width': 0,
-            'height': 0,
-            'features': 0,
+            'width': data.shape[1],
+            'height': data.shape[0],
+            'features': data.shape[2],
+            'precision': self.precision,
+            'overlay': has_overlay,
         }
 
-        metadata['width'] = data.shape[1]
-        metadata['height'] = data.shape[0]
-        metadata['features'] = data.shape[2]
-        metadata['precision'] = self.precision
+        if has_overlay:
+            bytes_io = io.BytesIO()
+            Image.open(self.overlay).save(bytes_io, format='jpeg', quality=85)
+            zip_file.writestr('overlay.jpg', bytes_io.getvalue())
 
         if self.precision == 32:
             self.create32_(data, zip_file, metadata)
@@ -97,8 +102,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Create an RTMFE ZIP from an NPZ file")
     parser.add_argument('file', type=str, help='path to the npz file')
     parser.add_argument("-n", "--name", dest='name', type=str, default='', help="optional dataset name")
-    parser.add_argument('-p', '--precision', dest='precision', choices=[8, 16, 32], default=8, type=int, help='bit precision to store the dataset in')
-    args = parser.parse_args()
+    parser.add_argument('-p', '--precision', dest='precision', choices=[8, 16, 32], default=8, type=int, help='bit precision to store the dataset in (default: 8)')
+    parser.add_argument('-o', '--overlay', type=str, help='optional path to the overlay image')
+    args = vars(parser.parse_args())
 
-    creator = ZipCreator(file=args.file, name=args.name, precision=args.precision)
+    creator = ZipCreator(**args)
     creator.create()

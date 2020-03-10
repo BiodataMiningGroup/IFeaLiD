@@ -84,6 +84,7 @@ class StoreDataset extends FormRequest
                 'height' => 'required|integer|min:1|max:8192',
                 'features' => 'required|integer|min:1|max:40000',
                 'precision' => 'required|integer|in:8,16,32',
+                'overlay' => 'required|boolean',
             ]);
 
             if ($metaValidator->fails()) {
@@ -98,8 +99,20 @@ class StoreDataset extends FormRequest
 
             $numFiles = intval(ceil($this->metadata['features'] / $reductionFactor));
             // +1 for metadata.json
-            if (($numFiles + 1) !== $zip->numFiles) {
-                $validator->errors()->add('file', 'The number of files does not match the number of features.');
+            $numFiles += 1;
+
+            if ($this->metadata['overlay']) {
+                // +1 for overlay.jpg
+                $numFiles += 1;
+
+                if ($zip->getFromName('overlay.jpg') === false) {
+                    $validator->errors()->add('file', 'No overlay file was found.');
+                    return;
+                }
+            }
+
+            if ($numFiles !== $zip->numFiles) {
+                $validator->errors()->add('file', 'The number of files does not match the expected number of files.');
                 return;
             }
 

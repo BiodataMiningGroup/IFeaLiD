@@ -16,6 +16,7 @@ class DatasetControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutMiddleware(ThrottleRequests::class);
+        Honeypot::disable();
     }
 
     public function testCreate()
@@ -25,6 +26,7 @@ class DatasetControllerTest extends TestCase
 
     public function testStoreHoneypot()
     {
+        Honeypot::enable();
         $local = Storage::fake('local');
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
@@ -35,7 +37,6 @@ class DatasetControllerTest extends TestCase
 
     public function testStore()
     {
-        Honeypot::disable();
         $local = Storage::fake('local');
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
@@ -61,7 +62,6 @@ class DatasetControllerTest extends TestCase
 
     public function testStore16bit()
     {
-        Honeypot::disable();
         $local = Storage::fake('local');
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
@@ -81,7 +81,6 @@ class DatasetControllerTest extends TestCase
 
     public function testStore32bit()
     {
-        Honeypot::disable();
         $local = Storage::fake('local');
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
@@ -102,70 +101,110 @@ class DatasetControllerTest extends TestCase
     public function testStoreValidateZipFileNumFiles()
     {
         $file = UploadedFile::fake()->create('dataset.zip', 1000, 'application/zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileNoMeta()
     {
         $file = $this->getFile('dataset_no_meta.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileMalformedMeta()
     {
         $file = $this->getFile('dataset_malformed_meta.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileInvalidMeta()
     {
         $file = $this->getFile('dataset_invalid_meta.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileMismatchFiles()
     {
         $file = $this->getFile('dataset_mismatch_files.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileForeignFiles()
     {
         $file = $this->getFile('dataset_foreign_files.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileTotalSize()
     {
         $file = $this->getFile('dataset_401mb.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileMismatchSize()
     {
         $file = $this->getFile('dataset_mismatch_size.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileLargeFeatures()
     {
         $file = $this->getFile('dataset_large_features.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
     public function testStoreValidateZipFileLargeImage()
     {
         $file = $this->getFile('dataset_large_image.zip');
-        $this->postJson("/api/datasets", ['file' => $file])
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
+            ->assertStatus(422);
+    }
+
+    public function testStoreValidateZipFileInvalidOverlay()
+    {
+        $file = $this->getFile('dataset_invalid_overlay.zip');
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
             ->assertStatus(422);
     }
 
