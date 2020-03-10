@@ -71,6 +71,9 @@ class ZipCreator(object):
         with np.load(self.file) as npz_file:
             data = npz_file[npz_file.files[0]]
 
+        if data.ndim != 3:
+            raise ValueError('The input data has an unexpected number of dimensions ({} given, 3 expected).'.format(data.ndim))
+
         zip_file = ZipFile(self.out_file, 'w')
         has_overlay = self.overlay != ''
 
