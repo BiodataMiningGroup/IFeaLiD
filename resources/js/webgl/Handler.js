@@ -59,10 +59,15 @@ export default class Handler {
         }
 
         let gl = canvas.getContext('webgl2', attributes);
-        gl.getExtension("EXT_color_buffer_float");
 
         if (!gl) {
             throw new WebglError('Your browser does not support WebGL 2.');
+        }
+
+        let ext = gl.getExtension("EXT_color_buffer_float");
+
+        if (!ext) {
+            throw new WebglError('Your browser does not support the WebGL 2 color buffer float extension.');
         }
 
         canvas.addEventListener('webglcontextlost', this.handleContextLost);
