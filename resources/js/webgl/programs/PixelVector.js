@@ -4,15 +4,17 @@ import vertexShaderSource from 'raw-loader!../shaders/rectangle.vs';
 
 
 export default class PixelVector extends Program {
-    constructor(dataset) {
+    constructor(options) {
         super(vertexShaderSource, fragmentShaderSource);
+        this.width = options.width;
+        this.height = options.height;
+        this.features = options.features;
         // Dimension of a square texture that can contain all values of the pixel vector.
-        this.textureDimension = Math.ceil(Math.sqrt(Math.ceil(dataset.features / 4)));
+        this.textureDimension = Math.ceil(Math.sqrt(Math.ceil(this.features / 4)));
         this.texture = null;
         this.inputTexture = null;
         this.mousePosition = [0, 0];
         this.mousePositionPointer = null;
-        this.dataset = dataset;
         this.framebuffer = null;
         this.pixelVector = new Float32Array(this.textureDimension * this.textureDimension * 4);
     }
@@ -48,7 +50,7 @@ export default class PixelVector extends Program {
 
     afterRender(gl, handler) {
         gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.FLOAT, this.pixelVector);
-        gl.viewport(0, 0, this.dataset.width, this.dataset.height);
+        gl.viewport(0, 0, this.width, this.height);
     }
 
     link(program) {
@@ -63,12 +65,12 @@ export default class PixelVector extends Program {
         // Move position to center of pixels.
         // Flip y-coordinates because the webgl textures are flipped, too.
         this.mousePosition = [
-            (position[0] + 0.5) / this.dataset.width,
-            1 - (position[1] + 0.5) / this.dataset.height,
+            (position[0] + 0.5) / this.width,
+            1 - (position[1] + 0.5) / this.height,
         ];
     }
 
     getPixelVector() {
-        return this.pixelVector.subarray(0, this.dataset.features);
+        return this.pixelVector.subarray(0, this.features);
     }
 }

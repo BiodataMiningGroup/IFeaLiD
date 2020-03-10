@@ -107,9 +107,12 @@ export default {
                 extent: this.extent,
             });
 
-            // Prevent image smoothing.
             this.imageLayer.on('prerender', function (event) {
                 event.context.imageSmoothingEnabled = false;
+            });
+
+            this.imageLayer.on('postrender', function (event) {
+                event.context.imageSmoothingEnabled = true;
             });
 
             this.markerFeature = new Feature(new Point([0, 0]));
@@ -140,6 +143,30 @@ export default {
                 }),
             });
 
+            if (this.dataset.overlay) {
+                this.overlayLayer = new ImageLayer({
+                    source: new ImageSource({
+                        url: `${this.dataset.url}/overlay.jpg`,
+                        projection: projection,
+                        imageExtent: this.extent,
+                    }),
+                    extent: this.extent,
+                    visible: false,
+                });
+
+                this.overlayLayer.on('prerender', function (event) {
+                    event.context.imageSmoothingEnabled = false;
+                    event.context.filter = 'grayscale(100%)';
+                });
+
+                this.overlayLayer.on('postrender', function (event) {
+                    event.context.imageSmoothingEnabled = true;
+                    event.context.filter = 'none';
+                });
+
+                this.map.getLayers().insertAt(0, this.overlayLayer);
+            }
+
             this.map.getView().fit(this.extent, {
                 padding: [10, 10, 10, 10],
             });
@@ -147,9 +174,12 @@ export default {
         initializePrograms() {
             this.similarityProgram = new SimilarityProgram(this.dataset);
             this.stretchIntensityProgram = new StretchIntensityProgram(this.dataset);
-            this.colorMapProgram = new ColorMapProgram();
+            this.colorMapProgram = new ColorMapProgram({
+                useAlpha: this.dataset.overlay,
+            });
             this.pixelVectorProgram = new PixelVectorProgram(this.dataset);
             this.singleFeatureProgram = new SingleFeatureProgram(this.dataset);
+
             this.handler.addProgram(this.similarityProgram);
             this.handler.addProgram(this.stretchIntensityProgram);
             this.handler.addProgram(this.colorMapProgram);
@@ -255,6 +285,9 @@ export default {
             .then(this.renderSimilarity)
             .then(this.setReady)
             .then(() => {
+                if (this.overlayLayer) {
+                    this.overlayLayer.setVisible(true);
+                }
                 this.map.on('pointermove', this.updateMousePosition);
                 this.map.on('click', this.updateMarkerPosition);
             })

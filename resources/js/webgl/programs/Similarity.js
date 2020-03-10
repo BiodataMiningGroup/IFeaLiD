@@ -5,8 +5,8 @@ import vertexShaderSource from 'raw-loader!../shaders/rectangle.vs';
 let MAX_DISTANCE = Math.PI / 2;
 
 export default class Similarity extends IntensityProgram {
-    constructor(dataset) {
-        super(vertexShaderSource, fragmentShaderSource, dataset);
+    constructor(options) {
+        super(vertexShaderSource, fragmentShaderSource, options);
         this.mousePosition = [0, 0];
         this.mousePositionPointer = null;
     }
@@ -37,8 +37,8 @@ export default class Similarity extends IntensityProgram {
         // Move position to center of pixels.
         // Flip y-coordinates because the webgl textures are flipped, too.
         this.mousePosition = [
-            (position[0] + 0.5) / this.dataset.width,
-            1 - (position[1] + 0.5) / this.dataset.height,
+            (position[0] + 0.5) / this.width,
+            1 - (position[1] + 0.5) / this.height,
         ];
     }
 }

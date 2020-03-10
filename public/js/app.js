@@ -44310,7 +44310,7 @@ process.umask = function() { return 0; };
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\n\nin vec2 v_texture_position;\n\nuniform sampler2D u_input;\nuniform sampler2D u_color_map;\n\nout vec4 outColor;\n\nvoid main() {\n   float intensity = texture(u_input, v_texture_position).r;\n   outColor = texture(u_color_map, vec2(intensity, 0.5));\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\n\nin vec2 v_texture_position;\n\nuniform sampler2D u_input;\nuniform sampler2D u_color_map;\n\nout vec4 outColor;\n\nvoid main() {\n   float intensity = texture(u_input, v_texture_position).r;\n   outColor = texture(u_color_map, vec2(intensity, 0.5));\n   // Multiply with alpha because the texture is not stored as premultiplied alpha.\n   // Only relevant if the color map includes alpha values other than 1.\n   outColor.rgb *= outColor.a;\n}\n");
 
 /***/ }),
 
@@ -59497,10 +59497,12 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       this.imageLayer = new ol_layer_Image__WEBPACK_IMPORTED_MODULE_1__["default"]({
         source: this.canvasSource,
         extent: this.extent
-      }); // Prevent image smoothing.
-
+      });
       this.imageLayer.on('prerender', function (event) {
         event.context.imageSmoothingEnabled = false;
+      });
+      this.imageLayer.on('postrender', function (event) {
+        event.context.imageSmoothingEnabled = true;
       });
       this.markerFeature = new ol_Feature__WEBPACK_IMPORTED_MODULE_8__["default"](new ol_geom_Point__WEBPACK_IMPORTED_MODULE_9__["default"]([0, 0]));
       this.markerLayer = new ol_layer_Vector__WEBPACK_IMPORTED_MODULE_2__["default"]({
@@ -59531,6 +59533,28 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
           projection: projection
         })
       });
+
+      if (this.dataset.overlay) {
+        this.overlayLayer = new ol_layer_Image__WEBPACK_IMPORTED_MODULE_1__["default"]({
+          source: new ol_source_ImageStatic__WEBPACK_IMPORTED_MODULE_4__["default"]({
+            url: "".concat(this.dataset.url, "/overlay.jpg"),
+            projection: projection,
+            imageExtent: this.extent
+          }),
+          extent: this.extent,
+          visible: false
+        });
+        this.overlayLayer.on('prerender', function (event) {
+          event.context.imageSmoothingEnabled = false;
+          event.context.filter = 'grayscale(100%)';
+        });
+        this.overlayLayer.on('postrender', function (event) {
+          event.context.imageSmoothingEnabled = true;
+          event.context.filter = 'none';
+        });
+        this.map.getLayers().insertAt(0, this.overlayLayer);
+      }
+
       this.map.getView().fit(this.extent, {
         padding: [10, 10, 10, 10]
       });
@@ -59538,7 +59562,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     initializePrograms: function initializePrograms() {
       this.similarityProgram = new _webgl_programs_Similarity__WEBPACK_IMPORTED_MODULE_14__["default"](this.dataset);
       this.stretchIntensityProgram = new _webgl_programs_StretchIntensity__WEBPACK_IMPORTED_MODULE_15__["default"](this.dataset);
-      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_16__["default"]();
+      this.colorMapProgram = new _webgl_programs_ColorMap__WEBPACK_IMPORTED_MODULE_16__["default"]({
+        useAlpha: this.dataset.overlay
+      });
       this.pixelVectorProgram = new _webgl_programs_PixelVector__WEBPACK_IMPORTED_MODULE_17__["default"](this.dataset);
       this.singleFeatureProgram = new _webgl_programs_SingleFeature__WEBPACK_IMPORTED_MODULE_18__["default"](this.dataset);
       this.handler.addProgram(this.similarityProgram);
@@ -59632,6 +59658,10 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     this.initializeWebgl(canvas);
     this.initializePrograms();
     this.fetchImages().then(this.renderSimilarity).then(this.setReady).then(function () {
+      if (_this2.overlayLayer) {
+        _this2.overlayLayer.setVisible(true);
+      }
+
       _this2.map.on('pointermove', _this2.updateMousePosition);
 
       _this2.map.on('click', _this2.updateMarkerPosition);
@@ -59811,8 +59841,7 @@ function () {
       this.tilesToStore_[i] = null;
     }
 
-    this.initializedTextures_ = new Array(this.props_.requiredUnits);
-    this.initializedTextures_.fill(false);
+    this.initializedTextures_ = Array(this.props_.requiredUnits).fill(false);
     this.programs_ = [];
     this.assets_ = {
       buffers: {},
@@ -60398,7 +60427,7 @@ var ColorMap =
 function (_Program) {
   _inherits(ColorMap, _Program);
 
-  function ColorMap() {
+  function ColorMap(options) {
     var _this;
 
     _classCallCheck(this, ColorMap);
@@ -60406,6 +60435,7 @@ function (_Program) {
     _this = _possibleConstructorReturn(this, _getPrototypeOf(ColorMap).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_color_map_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
     _this.colorMapTexture = null;
     _this.inputTexture = null;
+    _this.useAlpha = options.useAlpha === undefined ? false : options.useAlpha;
     return _this;
   }
 
@@ -60416,8 +60446,13 @@ function (_Program) {
       handler.useVertexPositions(this);
       handler.useTexturePositions(this);
       this.colorMapTexture = handler.getTexture('colorMap');
-      gl.bindTexture(gl.TEXTURE_2D, this.colorMapTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, _colorMaps__WEBPACK_IMPORTED_MODULE_3__["FIRE"]);
+
+      if (this.useAlpha) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, _colorMaps__WEBPACK_IMPORTED_MODULE_3__["FIRE_ALPHA"]);
+      } else {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, _colorMaps__WEBPACK_IMPORTED_MODULE_3__["FIRE"]);
+      }
+
       gl.uniform1i(gl.getUniformLocation(pointer, 'u_color_map'), 1);
     }
   }, {
@@ -60483,16 +60518,17 @@ var IntensityProgram =
 function (_Program) {
   _inherits(IntensityProgram, _Program);
 
-  function IntensityProgram(vertexShaderSource, fragmentShaderSource, dataset) {
+  function IntensityProgram(vertexShaderSource, fragmentShaderSource, options) {
     var _this;
 
     _classCallCheck(this, IntensityProgram);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(IntensityProgram).call(this, vertexShaderSource, fragmentShaderSource));
-    _this.dataset = dataset;
+    _this.width = options.width;
+    _this.height = options.height;
     _this.framebuffer = null;
     _this.outputTexture = null;
-    _this.intensities = new Float32Array(_this.dataset.width * _this.dataset.height * 4);
+    _this.intensities = new Float32Array(_this.width * _this.height * 4);
     _this.intensityStats = {
       min: 0,
       max: 0
@@ -60511,7 +60547,7 @@ function (_Program) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.outputTexture = handler.getTexture('intensity');
       gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.dataset.width, this.dataset.height, 0, gl.RED, gl.FLOAT, null);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.width, this.height, 0, gl.RED, gl.FLOAT, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -60525,7 +60561,7 @@ function (_Program) {
   }, {
     key: "afterRender",
     value: function afterRender(gl, handler) {
-      gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.FLOAT, this.intensities);
+      gl.readPixels(0, 0, this.width, this.height, gl.RGBA, gl.FLOAT, this.intensities);
       this.intensityStats.max = 0;
       this.intensityStats.min = 1;
 
@@ -60593,19 +60629,21 @@ var PixelVector =
 function (_Program) {
   _inherits(PixelVector, _Program);
 
-  function PixelVector(dataset) {
+  function PixelVector(options) {
     var _this;
 
     _classCallCheck(this, PixelVector);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PixelVector).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_pixel_vector_fs__WEBPACK_IMPORTED_MODULE_1__["default"])); // Dimension of a square texture that can contain all values of the pixel vector.
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(PixelVector).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_pixel_vector_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
+    _this.width = options.width;
+    _this.height = options.height;
+    _this.features = options.features; // Dimension of a square texture that can contain all values of the pixel vector.
 
-    _this.textureDimension = Math.ceil(Math.sqrt(Math.ceil(dataset.features / 4)));
+    _this.textureDimension = Math.ceil(Math.sqrt(Math.ceil(_this.features / 4)));
     _this.texture = null;
     _this.inputTexture = null;
     _this.mousePosition = [0, 0];
     _this.mousePositionPointer = null;
-    _this.dataset = dataset;
     _this.framebuffer = null;
     _this.pixelVector = new Float32Array(_this.textureDimension * _this.textureDimension * 4);
     return _this;
@@ -60642,7 +60680,7 @@ function (_Program) {
     key: "afterRender",
     value: function afterRender(gl, handler) {
       gl.readPixels(0, 0, this.textureDimension, this.textureDimension, gl.RGBA, gl.FLOAT, this.pixelVector);
-      gl.viewport(0, 0, this.dataset.width, this.dataset.height);
+      gl.viewport(0, 0, this.width, this.height);
     }
   }, {
     key: "link",
@@ -60659,12 +60697,12 @@ function (_Program) {
     value: function setMousePosition(position) {
       // Move position to center of pixels.
       // Flip y-coordinates because the webgl textures are flipped, too.
-      this.mousePosition = [(position[0] + 0.5) / this.dataset.width, 1 - (position[1] + 0.5) / this.dataset.height];
+      this.mousePosition = [(position[0] + 0.5) / this.width, 1 - (position[1] + 0.5) / this.height];
     }
   }, {
     key: "getPixelVector",
     value: function getPixelVector() {
-      return this.pixelVector.subarray(0, this.dataset.features);
+      return this.pixelVector.subarray(0, this.features);
     }
   }]);
 
@@ -60788,12 +60826,12 @@ var Similarity =
 function (_IntensityProgram) {
   _inherits(Similarity, _IntensityProgram);
 
-  function Similarity(dataset) {
+  function Similarity(options) {
     var _this;
 
     _classCallCheck(this, Similarity);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Similarity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__["default"], dataset));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Similarity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_similarity_fs__WEBPACK_IMPORTED_MODULE_1__["default"], options));
     _this.mousePosition = [0, 0];
     _this.mousePositionPointer = null;
     return _this;
@@ -60831,7 +60869,7 @@ function (_IntensityProgram) {
     value: function setMousePosition(position) {
       // Move position to center of pixels.
       // Flip y-coordinates because the webgl textures are flipped, too.
-      this.mousePosition = [(position[0] + 0.5) / this.dataset.width, 1 - (position[1] + 0.5) / this.dataset.height];
+      this.mousePosition = [(position[0] + 0.5) / this.width, 1 - (position[1] + 0.5) / this.height];
     }
   }]);
 
@@ -60894,12 +60932,12 @@ var SingleFeature =
 function (_IntensityProgram) {
   _inherits(SingleFeature, _IntensityProgram);
 
-  function SingleFeature(dataset) {
+  function SingleFeature(options) {
     var _this;
 
     _classCallCheck(this, SingleFeature);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(SingleFeature).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_single_feature_fs__WEBPACK_IMPORTED_MODULE_1__["default"], dataset));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(SingleFeature).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_single_feature_fs__WEBPACK_IMPORTED_MODULE_1__["default"], options));
     _this.tilePointer = null;
     _this.channelMaskPointer = null;
     _this.featureTile = 0;
@@ -60987,13 +61025,14 @@ var StretchIntensity =
 function (_Program) {
   _inherits(StretchIntensity, _Program);
 
-  function StretchIntensity(dataset) {
+  function StretchIntensity(options) {
     var _this;
 
     _classCallCheck(this, StretchIntensity);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(StretchIntensity).call(this, raw_loader_shaders_rectangle_vs__WEBPACK_IMPORTED_MODULE_2__["default"], raw_loader_shaders_stretch_intensity_fs__WEBPACK_IMPORTED_MODULE_1__["default"]));
-    _this.dataset = dataset;
+    _this.width = options.width;
+    _this.height = options.height;
     _this.outputTexture = null;
     _this.inputTexture = null;
     _this.intensityStats = null;
@@ -61012,7 +61051,7 @@ function (_Program) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
       this.outputTexture = handler.getTexture('stretchIntensity');
       gl.bindTexture(gl.TEXTURE_2D, this.outputTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.dataset.width, this.dataset.height, 0, gl.RED, gl.FLOAT, null);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, this.width, this.height, 0, gl.RED, gl.FLOAT, null);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outputTexture, 0);
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -61056,13 +61095,15 @@ function (_Program) {
 /*!**************************************************!*\
   !*** ./resources/js/webgl/programs/colorMaps.js ***!
   \**************************************************/
-/*! exports provided: FIRE */
+/*! exports provided: FIRE, FIRE_ALPHA */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FIRE", function() { return FIRE; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FIRE_ALPHA", function() { return FIRE_ALPHA; });
 var FIRE = new Uint8Array([0, 0, 0, 0, 0, 7, 0, 0, 15, 0, 0, 22, 0, 0, 30, 0, 0, 38, 0, 0, 45, 0, 0, 53, 0, 0, 61, 0, 0, 65, 0, 0, 69, 0, 0, 74, 0, 0, 78, 0, 0, 82, 0, 0, 87, 0, 0, 91, 1, 0, 96, 4, 0, 100, 7, 0, 104, 10, 0, 108, 13, 0, 113, 16, 0, 117, 19, 0, 121, 22, 0, 125, 25, 0, 130, 28, 0, 134, 31, 0, 138, 34, 0, 143, 37, 0, 147, 40, 0, 151, 43, 0, 156, 46, 0, 160, 49, 0, 165, 52, 0, 168, 55, 0, 171, 58, 0, 175, 61, 0, 178, 64, 0, 181, 67, 0, 185, 70, 0, 188, 73, 0, 192, 76, 0, 195, 79, 0, 199, 82, 0, 202, 85, 0, 206, 88, 0, 209, 91, 0, 213, 94, 0, 216, 98, 0, 220, 101, 0, 220, 104, 0, 221, 107, 0, 222, 110, 0, 223, 113, 0, 224, 116, 0, 225, 119, 0, 226, 122, 0, 227, 125, 0, 224, 128, 0, 222, 131, 0, 220, 134, 0, 218, 137, 0, 216, 140, 0, 214, 143, 0, 212, 146, 0, 210, 148, 0, 206, 150, 0, 202, 152, 0, 199, 154, 0, 195, 156, 0, 191, 158, 0, 188, 160, 0, 184, 162, 0, 181, 163, 0, 177, 164, 0, 173, 166, 0, 169, 167, 0, 166, 168, 0, 162, 170, 0, 158, 171, 0, 154, 173, 0, 151, 174, 0, 147, 175, 0, 143, 177, 0, 140, 178, 0, 136, 179, 0, 132, 181, 0, 129, 182, 0, 125, 184, 0, 122, 185, 0, 118, 186, 0, 114, 188, 0, 111, 189, 0, 107, 190, 0, 103, 192, 0, 100, 193, 0, 96, 195, 0, 93, 196, 1, 89, 198, 3, 85, 199, 5, 82, 201, 7, 78, 202, 8, 74, 204, 10, 71, 205, 12, 67, 207, 14, 64, 208, 16, 60, 209, 19, 56, 210, 21, 53, 212, 24, 49, 213, 27, 45, 214, 29, 42, 215, 32, 38, 217, 35, 35, 218, 37, 31, 220, 40, 27, 221, 43, 23, 223, 46, 20, 224, 48, 16, 226, 51, 12, 227, 54, 8, 229, 57, 5, 230, 59, 4, 231, 62, 3, 233, 65, 3, 234, 68, 2, 235, 70, 1, 237, 73, 1, 238, 76, 0, 240, 79, 0, 241, 81, 0, 243, 84, 0, 244, 87, 0, 246, 90, 0, 247, 92, 0, 249, 95, 0, 250, 98, 0, 252, 101, 0, 252, 103, 0, 252, 105, 0, 253, 107, 0, 253, 109, 0, 253, 111, 0, 254, 113, 0, 254, 115, 0, 255, 117, 0, 255, 119, 0, 255, 121, 0, 255, 123, 0, 255, 125, 0, 255, 127, 0, 255, 129, 0, 255, 131, 0, 255, 133, 0, 255, 134, 0, 255, 136, 0, 255, 138, 0, 255, 140, 0, 255, 141, 0, 255, 143, 0, 255, 145, 0, 255, 147, 0, 255, 148, 0, 255, 150, 0, 255, 152, 0, 255, 154, 0, 255, 155, 0, 255, 157, 0, 255, 159, 0, 255, 161, 0, 255, 162, 0, 255, 164, 0, 255, 166, 0, 255, 168, 0, 255, 169, 0, 255, 171, 0, 255, 173, 0, 255, 175, 0, 255, 176, 0, 255, 178, 0, 255, 180, 0, 255, 182, 0, 255, 184, 0, 255, 186, 0, 255, 188, 0, 255, 190, 0, 255, 191, 0, 255, 193, 0, 255, 195, 0, 255, 197, 0, 255, 199, 0, 255, 201, 0, 255, 203, 0, 255, 205, 0, 255, 206, 0, 255, 208, 0, 255, 210, 0, 255, 212, 0, 255, 213, 0, 255, 215, 0, 255, 217, 0, 255, 219, 0, 255, 220, 0, 255, 222, 0, 255, 224, 0, 255, 226, 0, 255, 228, 0, 255, 230, 0, 255, 232, 0, 255, 234, 0, 255, 235, 4, 255, 237, 8, 255, 239, 13, 255, 241, 17, 255, 242, 21, 255, 244, 26, 255, 246, 30, 255, 248, 35, 255, 248, 42, 255, 249, 50, 255, 250, 58, 255, 251, 66, 255, 252, 74, 255, 253, 82, 255, 254, 90, 255, 255, 98, 255, 255, 105, 255, 255, 113, 255, 255, 121, 255, 255, 129, 255, 255, 136, 255, 255, 144, 255, 255, 152, 255, 255, 160, 255, 255, 167, 255, 255, 175, 255, 255, 183, 255, 255, 191, 255, 255, 199, 255, 255, 207, 255, 255, 215, 255, 255, 223, 255, 255, 227, 255, 255, 231, 255, 255, 235, 255, 255, 239, 255, 255, 243, 255, 255, 247, 255, 255, 251, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]);
+var FIRE_ALPHA = new Uint8Array([0, 0, 0, 0, 0, 0, 7, 1, 0, 0, 15, 2, 0, 0, 22, 3, 0, 0, 30, 4, 0, 0, 38, 5, 0, 0, 45, 6, 0, 0, 53, 7, 0, 0, 61, 8, 0, 0, 65, 9, 0, 0, 69, 10, 0, 0, 74, 11, 0, 0, 78, 12, 0, 0, 82, 13, 0, 0, 87, 14, 0, 0, 91, 15, 1, 0, 96, 16, 4, 0, 100, 17, 7, 0, 104, 18, 10, 0, 108, 19, 13, 0, 113, 20, 16, 0, 117, 21, 19, 0, 121, 22, 22, 0, 125, 23, 25, 0, 130, 24, 28, 0, 134, 25, 31, 0, 138, 26, 34, 0, 143, 27, 37, 0, 147, 28, 40, 0, 151, 29, 43, 0, 156, 30, 46, 0, 160, 31, 49, 0, 165, 32, 52, 0, 168, 33, 55, 0, 171, 34, 58, 0, 175, 35, 61, 0, 178, 36, 64, 0, 181, 37, 67, 0, 185, 38, 70, 0, 188, 39, 73, 0, 192, 40, 76, 0, 195, 41, 79, 0, 199, 42, 82, 0, 202, 43, 85, 0, 206, 44, 88, 0, 209, 45, 91, 0, 213, 46, 94, 0, 216, 47, 98, 0, 220, 48, 101, 0, 220, 49, 104, 0, 221, 50, 107, 0, 222, 51, 110, 0, 223, 52, 113, 0, 224, 53, 116, 0, 225, 54, 119, 0, 226, 55, 122, 0, 227, 56, 125, 0, 224, 57, 128, 0, 222, 58, 131, 0, 220, 59, 134, 0, 218, 60, 137, 0, 216, 61, 140, 0, 214, 62, 143, 0, 212, 63, 146, 0, 210, 64, 148, 0, 206, 65, 150, 0, 202, 66, 152, 0, 199, 67, 154, 0, 195, 68, 156, 0, 191, 69, 158, 0, 188, 70, 160, 0, 184, 71, 162, 0, 181, 72, 163, 0, 177, 73, 164, 0, 173, 74, 166, 0, 169, 75, 167, 0, 166, 76, 168, 0, 162, 77, 170, 0, 158, 78, 171, 0, 154, 79, 173, 0, 151, 80, 174, 0, 147, 81, 175, 0, 143, 82, 177, 0, 140, 83, 178, 0, 136, 84, 179, 0, 132, 85, 181, 0, 129, 86, 182, 0, 125, 87, 184, 0, 122, 88, 185, 0, 118, 89, 186, 0, 114, 90, 188, 0, 111, 91, 189, 0, 107, 92, 190, 0, 103, 93, 192, 0, 100, 94, 193, 0, 96, 95, 195, 0, 93, 96, 196, 1, 89, 97, 198, 3, 85, 98, 199, 5, 82, 99, 201, 7, 78, 100, 202, 8, 74, 101, 204, 10, 71, 102, 205, 12, 67, 103, 207, 14, 64, 104, 208, 16, 60, 105, 209, 19, 56, 106, 210, 21, 53, 107, 212, 24, 49, 108, 213, 27, 45, 109, 214, 29, 42, 110, 215, 32, 38, 111, 217, 35, 35, 112, 218, 37, 31, 113, 220, 40, 27, 114, 221, 43, 23, 115, 223, 46, 20, 116, 224, 48, 16, 117, 226, 51, 12, 118, 227, 54, 8, 119, 229, 57, 5, 120, 230, 59, 4, 121, 231, 62, 3, 122, 233, 65, 3, 123, 234, 68, 2, 124, 235, 70, 1, 125, 237, 73, 1, 126, 238, 76, 0, 127, 240, 79, 0, 128, 241, 81, 0, 129, 243, 84, 0, 130, 244, 87, 0, 131, 246, 90, 0, 132, 247, 92, 0, 133, 249, 95, 0, 134, 250, 98, 0, 135, 252, 101, 0, 136, 252, 103, 0, 137, 252, 105, 0, 138, 253, 107, 0, 139, 253, 109, 0, 140, 253, 111, 0, 141, 254, 113, 0, 142, 254, 115, 0, 143, 255, 117, 0, 144, 255, 119, 0, 145, 255, 121, 0, 146, 255, 123, 0, 147, 255, 125, 0, 148, 255, 127, 0, 149, 255, 129, 0, 150, 255, 131, 0, 151, 255, 133, 0, 152, 255, 134, 0, 153, 255, 136, 0, 154, 255, 138, 0, 155, 255, 140, 0, 156, 255, 141, 0, 157, 255, 143, 0, 158, 255, 145, 0, 159, 255, 147, 0, 160, 255, 148, 0, 161, 255, 150, 0, 162, 255, 152, 0, 163, 255, 154, 0, 164, 255, 155, 0, 165, 255, 157, 0, 166, 255, 159, 0, 167, 255, 161, 0, 168, 255, 162, 0, 169, 255, 164, 0, 170, 255, 166, 0, 171, 255, 168, 0, 172, 255, 169, 0, 173, 255, 171, 0, 174, 255, 173, 0, 175, 255, 175, 0, 176, 255, 176, 0, 177, 255, 178, 0, 178, 255, 180, 0, 179, 255, 182, 0, 180, 255, 184, 0, 181, 255, 186, 0, 182, 255, 188, 0, 183, 255, 190, 0, 184, 255, 191, 0, 185, 255, 193, 0, 186, 255, 195, 0, 187, 255, 197, 0, 188, 255, 199, 0, 189, 255, 201, 0, 190, 255, 203, 0, 191, 255, 205, 0, 192, 255, 206, 0, 193, 255, 208, 0, 194, 255, 210, 0, 195, 255, 212, 0, 196, 255, 213, 0, 197, 255, 215, 0, 198, 255, 217, 0, 199, 255, 219, 0, 200, 255, 220, 0, 201, 255, 222, 0, 202, 255, 224, 0, 203, 255, 226, 0, 204, 255, 228, 0, 205, 255, 230, 0, 206, 255, 232, 0, 207, 255, 234, 0, 208, 255, 235, 4, 209, 255, 237, 8, 210, 255, 239, 13, 211, 255, 241, 17, 212, 255, 242, 21, 213, 255, 244, 26, 214, 255, 246, 30, 215, 255, 248, 35, 216, 255, 248, 42, 217, 255, 249, 50, 218, 255, 250, 58, 219, 255, 251, 66, 220, 255, 252, 74, 221, 255, 253, 82, 222, 255, 254, 90, 223, 255, 255, 98, 224, 255, 255, 105, 225, 255, 255, 113, 226, 255, 255, 121, 227, 255, 255, 129, 228, 255, 255, 136, 229, 255, 255, 144, 230, 255, 255, 152, 231, 255, 255, 160, 232, 255, 255, 167, 233, 255, 255, 175, 234, 255, 255, 183, 235, 255, 255, 191, 236, 255, 255, 199, 237, 255, 255, 207, 238, 255, 255, 215, 239, 255, 255, 223, 240, 255, 255, 227, 241, 255, 255, 231, 242, 255, 255, 235, 243, 255, 255, 239, 244, 255, 255, 243, 245, 255, 255, 247, 246, 255, 255, 251, 247, 255, 255, 255, 248, 255, 255, 255, 249, 255, 255, 255, 250, 255, 255, 255, 251, 255, 255, 255, 252, 255, 255, 255, 253, 255, 255, 255, 254, 255, 255, 255, 255]);
 
 
 /***/ }),

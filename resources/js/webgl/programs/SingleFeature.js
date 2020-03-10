@@ -3,8 +3,8 @@ import fragmentShaderSource from 'raw-loader!../shaders/single-feature.fs';
 import vertexShaderSource from 'raw-loader!../shaders/rectangle.vs';
 
 export default class SingleFeature extends IntensityProgram {
-    constructor(dataset) {
-        super(vertexShaderSource, fragmentShaderSource, dataset);
+    constructor(options) {
+        super(vertexShaderSource, fragmentShaderSource, options);
         this.tilePointer = null;
         this.channelMaskPointer = null;
         this.featureTile = 0;

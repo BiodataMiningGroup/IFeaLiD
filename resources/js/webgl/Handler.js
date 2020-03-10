@@ -28,8 +28,7 @@ export default class Handler {
         for (let i = 0; i < this.props_.tiles; i++) {
             this.tilesToStore_[i] = null;
         }
-        this.initializedTextures_ = new Array(this.props_.requiredUnits);
-        this.initializedTextures_.fill(false);
+        this.initializedTextures_ = Array(this.props_.requiredUnits).fill(false);
 
         this.programs_ = [];
 
