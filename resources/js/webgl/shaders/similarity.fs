@@ -1,6 +1,8 @@
 #version 300 es
 
 precision mediump float;
+precision mediump int;
+precision mediump usampler2D;
 
 in vec2 v_texture_position;
 
@@ -13,6 +15,7 @@ const vec4 ONES = vec4(1);
 const vec4 ZEROS = vec4(0);
 
 <%=SAMPLER_DEFINITION=%>
+<%=CONVERT_UVEC=%>
 
 void main() {
     // angle between the two vectors
@@ -71,8 +74,8 @@ void main() {
         // get rgba of the pixel to compare
         // get rgba of the position of this pixel
         <%=DYNAMIC_SAMPLER_QUERIES
-            reference = texture(<%=SAMPLER=%>, coords_2d_reference);
-            current = texture(<%=SAMPLER=%>, coords_2d_current);
+            reference = convertUvec(texture(<%=SAMPLER=%>, coords_2d_reference));
+            current = convertUvec(texture(<%=SAMPLER=%>, coords_2d_current));
         =%>
 
         currentLength += dot(current, current);

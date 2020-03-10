@@ -1,6 +1,8 @@
 #version 300 es
 
 precision mediump float;
+precision mediump int;
+precision mediump usampler2D;
 
 in vec2 v_texture_position;
 

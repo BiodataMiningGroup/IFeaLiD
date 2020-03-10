@@ -98,7 +98,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Create an RTMFE ZIP from an NPZ file")
     parser.add_argument('file', type=str, help='path to the npz file')
     parser.add_argument("-n", "--name", dest='name', type=str, default='', help="optional dataset name")
-    parser.add_argument('-p', '--precision', dest='precision', choices=[8, 16, 32], default=8, type=int)
+    parser.add_argument('-p', '--precision', dest='precision', choices=[8, 16, 32], default=8, type=int, help='bit precision to store the dataset in')
     args = parser.parse_args()
 
     creator = ZipCreator(file=args.file, name=args.name, precision=args.precision)

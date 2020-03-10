@@ -44323,7 +44323,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\n\nin vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_texture_dimension;\n\nout vec4 outColor;\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    // Texture coordinates are in [0, 1] and mark the center of a pixel of the texture.\n    // Multiply with u_texture_dimension to get the pixel coordinates and use floor()\n    // to shift the coordinates to the left corner of the pixel.\n    float tile_number = floor(v_texture_position.t * u_texture_dimension) * u_texture_dimension + floor(v_texture_position.s * u_texture_dimension);\n\n    outColor = texture3D(u_mouse_position, tile_number);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\nprecision mediump int;\nprecision mediump usampler2D;\n\nin vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_texture_dimension;\n\nout vec4 outColor;\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    // Texture coordinates are in [0, 1] and mark the center of a pixel of the texture.\n    // Multiply with u_texture_dimension to get the pixel coordinates and use floor()\n    // to shift the coordinates to the left corner of the pixel.\n    float tile_number = floor(v_texture_position.t * u_texture_dimension) * u_texture_dimension + floor(v_texture_position.s * u_texture_dimension);\n\n    outColor = texture3D(u_mouse_position, tile_number);\n}\n");
 
 /***/ }),
 
@@ -44349,7 +44349,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\n\nin vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_normalization;\n\nout vec4 outColor;\n\nconst vec4 ONES = vec4(1);\nconst vec4 ZEROS = vec4(0);\n\n<%=SAMPLER_DEFINITION=%>\n\nvoid main() {\n    // angle between the two vectors\n    // <A,B> = ||A|| * ||B|| * cos(angle)\n    // => angle = acos(<A,B>/(||A||*||B||))\n    float angle = 0.0;\n\n    // cummulating the squared length of this pixels vector\n    float currentLength = 0.0;\n    // cummulating the squared length of the reference pixels vector\n    float referenceLength = 0.0;\n\n    // temporary texture values of current position\n    vec4 current;\n    // temporary texture values of reference position\n    vec4 reference;\n\n    // the index of the current tile\n    float tile;\n\n    // the row-major index of the current tile on it's texture\n    float index_on_referencer;\n    // the column in which the current tile lies on the texture\n    float column;\n    // the row in which the current tile lies on the texture\n    float row;\n    // the index of the texture, the current tile is on\n    float sampler_index;\n\n    // the 2d coordinates of the current position on the correct texture\n    vec2 coords_2d_current;\n    // the 2d coordinates of the reference position on the correct texture\n    vec2 coords_2d_reference;\n\n    for (int i = 0; i < <%=TILES=%>; i++) {\n        tile = float(i);\n\n        index_on_referencer = mod(tile, <%=TILES_PER_TEXTURE=%>);\n        column = mod(index_on_referencer, <%=TILE_COLUMNS=%>);\n        row = floor(index_on_referencer / <%=TILE_COLUMNS=%>);\n\n        coords_2d_reference = vec2(\n            <%=TILE_WIDTH=%> * (column + u_mouse_position.x),\n            <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)\n        );\n\n        coords_2d_current = vec2(\n            <%=TILE_WIDTH=%> * (column + v_texture_position.x),\n            // y-flip the texture position because the textures are stored y-flipped.\n            <%=TILE_HEIGHT=%> * (row + 1.0 - v_texture_position.y)\n        );\n\n        // needed for DYNAMIC_SAMPLER_QUERIES\n        sampler_index = floor(tile / <%=TILES_PER_TEXTURE=%>);\n\n        // get rgba of the pixel to compare\n        // get rgba of the position of this pixel\n        <%=DYNAMIC_SAMPLER_QUERIES\n            reference = texture(<%=SAMPLER=%>, coords_2d_reference);\n            current = texture(<%=SAMPLER=%>, coords_2d_current);\n        =%>\n\n        currentLength += dot(current, current);\n        referenceLength += dot(reference, reference);\n        angle += dot(current, reference);\n    }\n\n    // if the intensities of this fragment are all 0, don't draw it\n    if (currentLength == 0.0) {\n        outColor = ZEROS;\n        return;\n    }\n\n    angle *= inversesqrt(currentLength * referenceLength);\n\n    // Normalize and clip angle to [0, 1].\n    angle = acos(angle) * u_normalization;\n    angle = min(1.0, max(0.0, angle));\n\n    // Invert angle because a lower angle should signify a higher similarity.\n    angle = 1.0 - angle;\n\n    outColor = vec4(angle);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\nprecision mediump int;\nprecision mediump usampler2D;\n\nin vec2 v_texture_position;\n\nuniform vec2 u_mouse_position;\nuniform float u_normalization;\n\nout vec4 outColor;\n\nconst vec4 ONES = vec4(1);\nconst vec4 ZEROS = vec4(0);\n\n<%=SAMPLER_DEFINITION=%>\n<%=CONVERT_UVEC=%>\n\nvoid main() {\n    // angle between the two vectors\n    // <A,B> = ||A|| * ||B|| * cos(angle)\n    // => angle = acos(<A,B>/(||A||*||B||))\n    float angle = 0.0;\n\n    // cummulating the squared length of this pixels vector\n    float currentLength = 0.0;\n    // cummulating the squared length of the reference pixels vector\n    float referenceLength = 0.0;\n\n    // temporary texture values of current position\n    vec4 current;\n    // temporary texture values of reference position\n    vec4 reference;\n\n    // the index of the current tile\n    float tile;\n\n    // the row-major index of the current tile on it's texture\n    float index_on_referencer;\n    // the column in which the current tile lies on the texture\n    float column;\n    // the row in which the current tile lies on the texture\n    float row;\n    // the index of the texture, the current tile is on\n    float sampler_index;\n\n    // the 2d coordinates of the current position on the correct texture\n    vec2 coords_2d_current;\n    // the 2d coordinates of the reference position on the correct texture\n    vec2 coords_2d_reference;\n\n    for (int i = 0; i < <%=TILES=%>; i++) {\n        tile = float(i);\n\n        index_on_referencer = mod(tile, <%=TILES_PER_TEXTURE=%>);\n        column = mod(index_on_referencer, <%=TILE_COLUMNS=%>);\n        row = floor(index_on_referencer / <%=TILE_COLUMNS=%>);\n\n        coords_2d_reference = vec2(\n            <%=TILE_WIDTH=%> * (column + u_mouse_position.x),\n            <%=TILE_HEIGHT=%> * (row + u_mouse_position.y)\n        );\n\n        coords_2d_current = vec2(\n            <%=TILE_WIDTH=%> * (column + v_texture_position.x),\n            // y-flip the texture position because the textures are stored y-flipped.\n            <%=TILE_HEIGHT=%> * (row + 1.0 - v_texture_position.y)\n        );\n\n        // needed for DYNAMIC_SAMPLER_QUERIES\n        sampler_index = floor(tile / <%=TILES_PER_TEXTURE=%>);\n\n        // get rgba of the pixel to compare\n        // get rgba of the position of this pixel\n        <%=DYNAMIC_SAMPLER_QUERIES\n            reference = convertUvec(texture(<%=SAMPLER=%>, coords_2d_reference));\n            current = convertUvec(texture(<%=SAMPLER=%>, coords_2d_current));\n        =%>\n\n        currentLength += dot(current, current);\n        referenceLength += dot(reference, reference);\n        angle += dot(current, reference);\n    }\n\n    // if the intensities of this fragment are all 0, don't draw it\n    if (currentLength == 0.0) {\n        outColor = ZEROS;\n        return;\n    }\n\n    angle *= inversesqrt(currentLength * referenceLength);\n\n    // Normalize and clip angle to [0, 1].\n    angle = acos(angle) * u_normalization;\n    angle = min(1.0, max(0.0, angle));\n\n    // Invert angle because a lower angle should signify a higher similarity.\n    angle = 1.0 - angle;\n\n    outColor = vec4(angle);\n}\n");
 
 /***/ }),
 
@@ -44362,7 +44362,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\n\nin vec2 v_texture_position;\n\n// index of the tile to which the feature belongs\nuniform float u_tile;\n// filters out every feature but the desired one\nuniform vec4 u_channel_mask;\n\nout vec4 outColor;\n\nconst vec4 ONES = vec4(1);\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    // y-flip the texture position because the textures are stored y-flipped.\n    vec4 colors = texture3D(vec2(v_texture_position.x, 1.0 - v_texture_position.y), u_tile);\n    float channel_color = dot(colors * u_channel_mask, ONES);\n\n    outColor = vec4(channel_color);\n}\n");
+/* harmony default export */ __webpack_exports__["default"] = ("#version 300 es\n\nprecision mediump float;\nprecision mediump int;\nprecision mediump usampler2D;\n\nin vec2 v_texture_position;\n\n// index of the tile to which the feature belongs\nuniform float u_tile;\n// filters out every feature but the desired one\nuniform vec4 u_channel_mask;\n\nout vec4 outColor;\n\nconst vec4 ONES = vec4(1);\n\n<%=TEXTURE_3D=%>\n\nvoid main() {\n    // y-flip the texture position because the textures are stored y-flipped.\n    vec4 colors = texture3D(vec2(v_texture_position.x, 1.0 - v_texture_position.y), u_tile);\n    float channel_color = dot(colors * u_channel_mask, ONES);\n\n    outColor = vec4(channel_color);\n}\n");
 
 /***/ }),
 
@@ -58902,14 +58902,13 @@ function () {
   }, {
     key: "mergeImagesToTile16bit_",
     value: function mergeImagesToTile16bit_(images) {
-      var merged = new Float32Array(this.dataset.width * this.dataset.height * 4);
-      var uint16Max = 65535;
+      var merged = new Uint16Array(this.dataset.width * this.dataset.height * 4);
 
       for (var i = 0; i < images[0].length; i += 2) {
-        merged[i * 4] = images[0][i] / uint16Max;
-        merged[i * 4 + 1] = images[0][i + 1] / uint16Max;
-        merged[i * 4 + 2] = images[1][i] / uint16Max;
-        merged[i * 4 + 3] = images[1][i + 1] / uint16Max;
+        merged[i * 2] = images[0][i];
+        merged[i * 2 + 1] = images[0][i + 1];
+        merged[i * 2 + 2] = images[1][i];
+        merged[i * 2 + 3] = images[1][i + 1];
       }
 
       return merged;
@@ -58917,14 +58916,13 @@ function () {
   }, {
     key: "mergeImagesToTile32bit_",
     value: function mergeImagesToTile32bit_(images) {
-      var merged = new Float32Array(this.dataset.width * this.dataset.height * 4);
-      var uint32Max = 4294967295;
+      var merged = new Uint32Array(this.dataset.width * this.dataset.height * 4);
 
       for (var i = 0; i < images[0].length; i++) {
-        merged[i * 4] = images[0][i] / uint32Max;
-        merged[i * 4 + 1] = images[1][i] / uint32Max;
-        merged[i * 4 + 2] = images[2][i] / uint32Max;
-        merged[i * 4 + 3] = images[3][i] / uint32Max;
+        merged[i * 4] = images[0][i];
+        merged[i * 4 + 1] = images[1][i];
+        merged[i * 4 + 2] = images[2][i];
+        merged[i * 4 + 3] = images[3][i];
       }
 
       return merged;
@@ -59932,11 +59930,24 @@ function () {
       }
     }
   }, {
+    key: "compileConvertUvecFunction_",
+    value: function compileConvertUvecFunction_() {
+      var divisor = 255;
+
+      if (this.dataset_.precision === 16) {
+        divisor = 65535;
+      } else if (this.dataset_.precision === 32) {
+        divisor = 4294967295;
+      }
+
+      return "\n            vec4 convertUvec(uvec4 inputUvec) {\n                return vec4(inputUvec) / ".concat(numberToFloatString(divisor), ";\n            }\n        ");
+    }
+  }, {
     key: "compileSamplerDefinition_",
     value: function compileSamplerDefinition_() {
       var output = '';
       this.forEachTexture_(function (name) {
-        output += "uniform sampler2D ".concat(name, ";\n");
+        output += "uniform usampler2D ".concat(name, ";\n");
       });
       return output;
     }
@@ -59945,7 +59956,7 @@ function () {
     value: function compileSamplerQueries_() {
       var output = '';
       this.forEachTexture_(function (name, index, absIndex) {
-        output += "if (sampler_index == ".concat(numberToFloatString(absIndex), ") {\n                return texture(").concat(name, ", coords_2d);\n            }\n            ");
+        output += "if (sampler_index == ".concat(numberToFloatString(absIndex), ") {\n                return convertUvec(texture(").concat(name, ", coords_2d));\n            }\n            ");
       });
       return output;
     }
@@ -59971,6 +59982,7 @@ function () {
       var tileWidth = numberToFloatString(1 / props.colsPerTexture);
       var tileHeight = numberToFloatString(1 / props.rowsPerTexture);
       output += this.compileSamplerDefinition_();
+      output += this.compileConvertUvecFunction_();
       output += "\n        vec4 texture3D(vec2 position, float tileIdx) {\n            float index_on_sampler = mod(tileIdx, ".concat(tilesPerTexture, ");\n            float column = mod(index_on_sampler, ").concat(columns, ");\n            float row = floor(index_on_sampler / ").concat(columns, ");\n            vec2 coords_2d = vec2(\n                ").concat(tileWidth, " * (column + position.x),\n                ").concat(tileHeight, " * (row + position.y)\n            );\n\n            float sampler_index = floor(tileIdx / ").concat(tilesPerTexture, ");\n        ");
       output += this.compileSamplerQueries_();
       output += "\n            return vec4(0);\n        }\n        ";
@@ -59988,6 +60000,7 @@ function () {
       source = source.replace(/<%=TILE_WIDTH=%>/g, numberToFloatString(1 / props.colsPerTexture));
       source = source.replace(/<%=TILE_HEIGHT=%>/g, numberToFloatString(1 / props.rowsPerTexture));
       source = source.replace(/<%=TEXTURE_3D=%>/, this.compileTexture3dFunction_(props));
+      source = source.replace(/<%=CONVERT_UVEC=%>/, this.compileConvertUvecFunction_());
       source = source.replace(/<%=SAMPLER_DEFINITION=%>/, this.compileSamplerDefinition_());
       source = source.replace(/<%=SAMPLER_QUERIES=%>/, this.compileSamplerQueries_());
       var dynamicSamplerQueryRegexp = /<%=DYNAMIC_SAMPLER_QUERIES([\s\S]*)\n\s*=%>\n/;
@@ -60110,20 +60123,20 @@ function () {
       var emptyArray;
 
       if (dataset.precision === 8) {
-        format = gl.RGBA;
+        format = gl.RGBA8UI;
         type = gl.UNSIGNED_BYTE;
         emptyArray = new Uint8Array(width * height * 4);
       } else if (dataset.precision === 16) {
-        format = gl.RGBA16F;
-        type = gl.HALF_FLOAT;
-        emptyArray = new Float32Array(width * height * 4);
+        format = gl.RGBA16UI;
+        type = gl.UNSIGNED_SHORT;
+        emptyArray = new Uint16Array(width * height * 4);
       } else {
-        format = gl.RGBA32F;
-        type = gl.FLOAT;
-        emptyArray = new Float32Array(width * height * 4);
+        format = gl.RGBA32UI;
+        type = gl.UNSIGNED_INT;
+        emptyArray = new Uint32Array(width * height * 4);
       }
 
-      gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, gl.RGBA, type, emptyArray);
+      gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, gl.RGBA_INTEGER, type, emptyArray);
     }
   }, {
     key: "storeTileSubImage_",
@@ -60133,12 +60146,12 @@ function () {
       if (dataset.precision === 8) {
         type = gl.UNSIGNED_BYTE;
       } else if (dataset.precision === 16) {
-        type = gl.HALF_FLOAT;
+        type = gl.UNSIGNED_SHORT;
       } else {
-        type = gl.FLOAT;
+        type = gl.UNSIGNED_INT;
       }
 
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA, type, tile);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, type, tile);
     }
   }, {
     key: "storeTile_",
@@ -60147,8 +60160,10 @@ function () {
 
       if (dataset.precision === 8 && !(tile instanceof Uint8Array)) {
         throw new WebglError('Each tile image must be a Uint8Array.');
-      } else if (dataset.precision !== 8 && !(tile instanceof Float32Array)) {
-        throw new WebglError('Each tile image must be a Float32Array.');
+      } else if (dataset.precision === 16 && !(tile instanceof Uint16Array)) {
+        throw new WebglError('Each tile image must be a Uint16Array.');
+      } else if (dataset.precision === 32 && !(tile instanceof Uint32Array)) {
+        throw new WebglError('Each tile image must be a Uint32Array.');
       }
 
       var textureNumber = Math.floor(index / props.tilesPerTexture);

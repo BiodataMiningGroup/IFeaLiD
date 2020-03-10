@@ -139,11 +139,26 @@ export default class Handler {
         }
     }
 
+    compileConvertUvecFunction_() {
+        let divisor = 255;
+        if (this.dataset_.precision === 16) {
+            divisor = 65535;
+        } else if (this.dataset_.precision === 32) {
+            divisor = 4294967295;
+        }
+
+        return `
+            vec4 convertUvec(uvec4 inputUvec) {
+                return vec4(inputUvec) / ${numberToFloatString(divisor)};
+            }
+        `;
+    }
+
     compileSamplerDefinition_() {
         let output = '';
 
         this.forEachTexture_(function (name) {
-            output += `uniform sampler2D ${name};\n`;
+            output += `uniform usampler2D ${name};\n`;
         });
 
         return output;
@@ -154,7 +169,7 @@ export default class Handler {
 
         this.forEachTexture_(function (name, index, absIndex) {
             output += `if (sampler_index == ${numberToFloatString(absIndex)}) {
-                return texture(${name}, coords_2d);
+                return convertUvec(texture(${name}, coords_2d));
             }
             `;
         });
@@ -188,6 +203,7 @@ export default class Handler {
         let tileHeight = numberToFloatString(1 / props.rowsPerTexture);
 
         output += this.compileSamplerDefinition_();
+        output += this.compileConvertUvecFunction_();
         output += `
         vec4 texture3D(vec2 position, float tileIdx) {
             float index_on_sampler = mod(tileIdx, ${tilesPerTexture});
@@ -222,6 +238,7 @@ export default class Handler {
         source = source.replace(/<%=TILE_HEIGHT=%>/g, numberToFloatString(1 / props.rowsPerTexture));
 
         source = source.replace(/<%=TEXTURE_3D=%>/, this.compileTexture3dFunction_(props));
+        source = source.replace(/<%=CONVERT_UVEC=%>/, this.compileConvertUvecFunction_());
         source = source.replace(/<%=SAMPLER_DEFINITION=%>/, this.compileSamplerDefinition_());
         source = source.replace(/<%=SAMPLER_QUERIES=%>/, this.compileSamplerQueries_());
 
@@ -333,20 +350,20 @@ export default class Handler {
         let emptyArray;
 
         if (dataset.precision === 8) {
-            format = gl.RGBA;
+            format = gl.RGBA8UI;
             type = gl.UNSIGNED_BYTE;
             emptyArray = new Uint8Array(width * height * 4);
         } else if (dataset.precision === 16) {
-            format = gl.RGBA16F;
-            type = gl.HALF_FLOAT;
-            emptyArray = new Float32Array(width * height * 4);
+            format = gl.RGBA16UI;
+            type = gl.UNSIGNED_SHORT;
+            emptyArray = new Uint16Array(width * height * 4);
         } else {
-            format = gl.RGBA32F;
-            type = gl.FLOAT;
-            emptyArray = new Float32Array(width * height * 4);
+            format = gl.RGBA32UI;
+            type = gl.UNSIGNED_INT;
+            emptyArray = new Uint32Array(width * height * 4);
         }
 
-        gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, gl.RGBA, type, emptyArray);
+        gl.texImage2D(gl.TEXTURE_2D, 0, format, width, height, 0, gl.RGBA_INTEGER, type, emptyArray);
     }
 
     storeTileSubImage_(gl, dataset, x, y, width, height, tile) {
@@ -355,19 +372,21 @@ export default class Handler {
         if (dataset.precision === 8) {
             type = gl.UNSIGNED_BYTE;
         } else if (dataset.precision === 16) {
-            type = gl.HALF_FLOAT;
+            type = gl.UNSIGNED_SHORT;
         } else {
-            type = gl.FLOAT;
+            type = gl.UNSIGNED_INT;
         }
 
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA, type, tile);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, width, height, gl.RGBA_INTEGER, type, tile);
     }
 
     storeTile_(gl, tile, index, dataset, props) {
         if (dataset.precision === 8 && !(tile instanceof Uint8Array)) {
             throw new WebglError('Each tile image must be a Uint8Array.');
-        } else if (dataset.precision !== 8 && !(tile instanceof Float32Array)) {
-            throw new WebglError('Each tile image must be a Float32Array.');
+        } else if (dataset.precision === 16 && !(tile instanceof Uint16Array)) {
+            throw new WebglError('Each tile image must be a Uint16Array.');
+        } else if (dataset.precision === 32 && !(tile instanceof Uint32Array)) {
+            throw new WebglError('Each tile image must be a Uint32Array.');
         }
 
         let textureNumber = Math.floor(index / props.tilesPerTexture);

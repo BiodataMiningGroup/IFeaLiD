@@ -51,26 +51,24 @@ export default class ImageHandler {
     }
 
     mergeImagesToTile16bit_(images) {
-        let merged = new Float32Array(this.dataset.width * this.dataset.height * 4);
-        let uint16Max = 65535;
+        let merged = new Uint16Array(this.dataset.width * this.dataset.height * 4);
         for (let i = 0; i < images[0].length; i += 2) {
-            merged[i * 4] = images[0][i] / uint16Max;
-            merged[i * 4 + 1] = images[0][i + 1] / uint16Max;
-            merged[i * 4 + 2] = images[1][i] / uint16Max;
-            merged[i * 4 + 3] = images[1][i + 1] / uint16Max;
+            merged[i * 2] = images[0][i];
+            merged[i * 2 + 1] = images[0][i + 1];
+            merged[i * 2 + 2] = images[1][i];
+            merged[i * 2 + 3] = images[1][i + 1];
         }
 
         return merged;
     }
 
     mergeImagesToTile32bit_(images) {
-        let merged = new Float32Array(this.dataset.width * this.dataset.height * 4);
-        let uint32Max = 4294967295;
+        let merged = new Uint32Array(this.dataset.width * this.dataset.height * 4);
         for (let i = 0; i < images[0].length; i++) {
-            merged[i * 4] = images[0][i] / uint32Max;
-            merged[i * 4 + 1] = images[1][i] / uint32Max;
-            merged[i * 4 + 2] = images[2][i] / uint32Max;
-            merged[i * 4 + 3] = images[3][i] / uint32Max;
+            merged[i * 4] = images[0][i];
+            merged[i * 4 + 1] = images[1][i];
+            merged[i * 4 + 2] = images[2][i];
+            merged[i * 4 + 3] = images[3][i];
         }
 
         return merged;
