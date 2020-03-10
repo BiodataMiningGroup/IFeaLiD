@@ -2,6 +2,7 @@ import {Map, View} from 'ol';
 import ImageLayer from 'ol/layer/Image';
 import VectorLayer from 'ol/layer/Vector';
 import CanvasSource from '../ol/source/Canvas';
+import OpacitySlider from '../ol/control/OpacitySlider';
 import ImageSource from 'ol/source/ImageStatic';
 import VectorSource from 'ol/source/Vector';
 import Projection from 'ol/proj/Projection';
@@ -44,11 +45,15 @@ export default {
         return {
             loaded: 0,
             ready: false,
+            initialAlphaScaling: 0.1,
         };
     },
     computed: {
         extent() {
             return [0, 0, this.dataset.width, this.dataset.height];
+        },
+        hasOverlay() {
+            return this.dataset.overlay;
         },
     },
     methods: {
@@ -143,7 +148,14 @@ export default {
                 }),
             });
 
-            if (this.dataset.overlay) {
+
+            if (this.hasOverlay) {
+                let slider = new OpacitySlider({
+                    opacity: 1 - this.initialAlphaScaling,
+                });
+                slider.on('change:opacity', this.updateAlphaScaling);
+                this.map.addControl(slider);
+
                 this.overlayLayer = new ImageLayer({
                     source: new ImageSource({
                         url: `${this.dataset.url}/overlay.jpg`,
@@ -174,9 +186,10 @@ export default {
         initializePrograms() {
             this.similarityProgram = new SimilarityProgram(this.dataset);
             this.stretchIntensityProgram = new StretchIntensityProgram(this.dataset);
-            this.colorMapProgram = new ColorMapProgram({
-                useAlpha: this.dataset.overlay,
-            });
+            this.colorMapProgram = new ColorMapProgram();
+            if (this.hasOverlay) {
+                this.colorMapProgram.setAlphaScaling(this.initialAlphaScaling);
+            }
             this.pixelVectorProgram = new PixelVectorProgram(this.dataset);
             this.singleFeatureProgram = new SingleFeatureProgram(this.dataset);
 
@@ -269,6 +282,11 @@ export default {
                 }
             }
         },
+        updateAlphaScaling(event) {
+            const alphaScaling = 1 - event.target.get('opacity');
+            this.colorMapProgram.setAlphaScaling(alphaScaling);
+            this.renderSimilarity();
+        }
     },
     watch: {
         //

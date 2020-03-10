@@ -1,14 +1,15 @@
 import Program from './Program';
 import fragmentShaderSource from 'raw-loader!../shaders/color-map.fs';
 import vertexShaderSource from 'raw-loader!../shaders/rectangle.vs';
-import {FIRE, FIRE_ALPHA} from './colorMaps';
+import {FIRE} from './colorMaps';
 
 export default class ColorMap extends Program {
-    constructor(options) {
+    constructor() {
         super(vertexShaderSource, fragmentShaderSource);
         this.colorMapTexture = null;
         this.inputTexture = null;
-        this.useAlpha = options.useAlpha === undefined ? false : options.useAlpha;
+        this.alphaScaling = 1.0;
+        this.alphaScalingPointer = null;
     }
 
     initialize(gl, handler) {
@@ -16,12 +17,10 @@ export default class ColorMap extends Program {
         handler.useVertexPositions(this);
         handler.useTexturePositions(this);
 
+        this.alphaScalingPointer = gl.getUniformLocation(pointer, 'u_alpha_scaling');
+
         this.colorMapTexture = handler.getTexture('colorMap');
-        if (this.useAlpha) {
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, FIRE_ALPHA);
-        } else {
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, FIRE);
-        }
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 256, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, FIRE);
         gl.uniform1i(gl.getUniformLocation(pointer, 'u_color_map'), 1);
     }
 
@@ -31,6 +30,7 @@ export default class ColorMap extends Program {
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, this.colorMapTexture);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.uniform1f(this.alphaScalingPointer, this.alphaScaling);
     }
 
     afterRender(gl, handler) {
@@ -39,5 +39,9 @@ export default class ColorMap extends Program {
 
     link(program) {
         this.inputTexture = program.getOutputTexture();
+    }
+
+    setAlphaScaling(alphaScaling) {
+        this.alphaScaling = alphaScaling;
     }
 }
