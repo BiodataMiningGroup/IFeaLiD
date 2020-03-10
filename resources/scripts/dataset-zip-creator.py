@@ -15,7 +15,6 @@ class ZipCreator(object):
 
     def create8_(self, data, zip_file, metadata):
         uint8_max = np.iinfo(np.uint8).max
-        # Normalize to uint8 range.
         global_max = data.reshape(-1).max()
         global_min = data.reshape(-1).min()
         data = np.round((data - global_min) / (global_max - global_min) * uint8_max).astype(np.uint8)
@@ -84,12 +83,12 @@ class ZipCreator(object):
         metadata['features'] = data.shape[2]
         metadata['precision'] = self.precision
 
-        if self.precision == 8:
-            self.create8_(data, zip_file, metadata)
+        if self.precision == 32:
+            self.create32_(data, zip_file, metadata)
         elif self.precision == 16:
             self.create16_(data, zip_file, metadata)
         else:
-            self.create32_(data, zip_file, metadata)
+            self.create8_(data, zip_file, metadata)
 
         zip_file.writestr('metadata.json', json.dumps(metadata))
         zip_file.close()

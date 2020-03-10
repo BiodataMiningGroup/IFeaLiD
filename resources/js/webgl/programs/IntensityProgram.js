@@ -37,7 +37,6 @@ export default class IntensityProgram extends Program {
     }
 
     afterRender(gl, handler) {
-        // TODO: Do this more efficiently. Get the min/max with min/max pooling shaders?
         gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.FLOAT, this.intensities);
         this.intensityStats.max = 0;
         this.intensityStats.min = 1;

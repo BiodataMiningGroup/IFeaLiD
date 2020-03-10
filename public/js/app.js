@@ -58900,43 +58900,33 @@ function () {
       return new Uint32Array(data.buffer);
     }
   }, {
-    key: "mergeImagesToTile16bit_",
-    value: function mergeImagesToTile16bit_(images) {
-      var merged = new Uint16Array(this.dataset.width * this.dataset.height * 4);
-
-      for (var i = 0; i < images[0].length; i += 2) {
-        merged[i * 2] = images[0][i];
-        merged[i * 2 + 1] = images[0][i + 1];
-        merged[i * 2 + 2] = images[1][i];
-        merged[i * 2 + 3] = images[1][i + 1];
-      }
-
-      return merged;
-    }
-  }, {
-    key: "mergeImagesToTile32bit_",
-    value: function mergeImagesToTile32bit_(images) {
-      var merged = new Uint32Array(this.dataset.width * this.dataset.height * 4);
-
-      for (var i = 0; i < images[0].length; i++) {
-        merged[i * 4] = images[0][i];
-        merged[i * 4 + 1] = images[1][i];
-        merged[i * 4 + 2] = images[2][i];
-        merged[i * 4 + 3] = images[3][i];
-      }
-
-      return merged;
-    }
-  }, {
     key: "mergeImagesToTile_",
     value: function mergeImagesToTile_(images) {
-      if (this.dataset.precision === 8) {
-        return images[0];
+      var merged;
+
+      if (images.length === 4) {
+        merged = new Uint32Array(this.dataset.width * this.dataset.height * 4);
+
+        for (var i = 0; i < images[0].length; i++) {
+          merged[i * 4] = images[0][i];
+          merged[i * 4 + 1] = images[1][i];
+          merged[i * 4 + 2] = images[2][i];
+          merged[i * 4 + 3] = images[3][i];
+        }
       } else if (images.length === 2) {
-        return this.mergeImagesToTile16bit_(images);
+        merged = new Uint16Array(this.dataset.width * this.dataset.height * 4);
+
+        for (var _i = 0; _i < images[0].length; _i += 2) {
+          merged[_i * 2] = images[0][_i];
+          merged[_i * 2 + 1] = images[0][_i + 1];
+          merged[_i * 2 + 2] = images[1][_i];
+          merged[_i * 2 + 3] = images[1][_i + 1];
+        }
       } else {
-        return this.mergeImagesToTile32bit_(images);
+        merged = images[0];
       }
+
+      return merged;
     }
   }, {
     key: "load",
@@ -59851,10 +59841,15 @@ function () {
       }
 
       var gl = canvas.getContext('webgl2', attributes);
-      gl.getExtension("EXT_color_buffer_float");
 
       if (!gl) {
         throw new WebglError('Your browser does not support WebGL 2.');
+      }
+
+      var ext = gl.getExtension("EXT_color_buffer_float");
+
+      if (!ext) {
+        throw new WebglError('Your browser does not support the WebGL 2 color buffer float extension.');
       }
 
       canvas.addEventListener('webglcontextlost', this.handleContextLost);
@@ -60530,7 +60525,6 @@ function (_Program) {
   }, {
     key: "afterRender",
     value: function afterRender(gl, handler) {
-      // TODO: Do this more efficiently. Get the min/max with min/max pooling shaders?
       gl.readPixels(0, 0, this.dataset.width, this.dataset.height, gl.RGBA, gl.FLOAT, this.intensities);
       this.intensityStats.max = 0;
       this.intensityStats.min = 1;

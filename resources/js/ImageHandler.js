@@ -50,38 +50,34 @@ export default class ImageHandler {
         return new Uint32Array(data.buffer);
     }
 
-    mergeImagesToTile16bit_(images) {
-        let merged = new Uint16Array(this.dataset.width * this.dataset.height * 4);
-        for (let i = 0; i < images[0].length; i += 2) {
-            merged[i * 2] = images[0][i];
-            merged[i * 2 + 1] = images[0][i + 1];
-            merged[i * 2 + 2] = images[1][i];
-            merged[i * 2 + 3] = images[1][i + 1];
-        }
-
-        return merged;
-    }
-
-    mergeImagesToTile32bit_(images) {
-        let merged = new Uint32Array(this.dataset.width * this.dataset.height * 4);
-        for (let i = 0; i < images[0].length; i++) {
-            merged[i * 4] = images[0][i];
-            merged[i * 4 + 1] = images[1][i];
-            merged[i * 4 + 2] = images[2][i];
-            merged[i * 4 + 3] = images[3][i];
-        }
-
-        return merged;
-    }
-
     mergeImagesToTile_(images) {
-        if (this.dataset.precision === 8) {
-            return images[0];
+        let merged;
+
+        if (images.length === 4) {
+
+            merged = new Uint32Array(this.dataset.width * this.dataset.height * 4);
+            for (let i = 0; i < images[0].length; i++) {
+                merged[i * 4] = images[0][i];
+                merged[i * 4 + 1] = images[1][i];
+                merged[i * 4 + 2] = images[2][i];
+                merged[i * 4 + 3] = images[3][i];
+            }
+
         } else if (images.length === 2) {
-            return this.mergeImagesToTile16bit_(images);
+
+            merged = new Uint16Array(this.dataset.width * this.dataset.height * 4);
+            for (let i = 0; i < images[0].length; i += 2) {
+                merged[i * 2] = images[0][i];
+                merged[i * 2 + 1] = images[0][i + 1];
+                merged[i * 2 + 2] = images[1][i];
+                merged[i * 2 + 3] = images[1][i + 1];
+            }
+
         } else {
-            return this.mergeImagesToTile32bit_(images);
+            merged = images[0];
         }
+
+        return merged;
     }
 
     load(parallel) {
