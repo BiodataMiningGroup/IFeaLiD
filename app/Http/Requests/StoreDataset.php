@@ -117,13 +117,13 @@ class StoreDataset extends FormRequest
             }
 
             $totalSize = 0;
-            $foundMetadata = false;
+            $skipFiles = ['metadata.json', 'overlay.jpg'];
 
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $stats = $zip->statIndex($i);
                 $totalSize += $stats['size'];
-                if (!$foundMetadata && $stats['name'] === 'metadata.json') {
-                    $foundMetadata = true;
+                if (in_array($stats['name'], $skipFiles)) {
+                    continue;
                 } else {
                     $matches = [];
                     preg_match('/([0-9]+)\.(png)/', $stats['name'], $matches);
@@ -141,7 +141,7 @@ class StoreDataset extends FormRequest
 
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $name = $zip->getNameIndex($i);
-                if ($name !== 'metadata.json') {
+                if (!in_array($name, $skipFiles)) {
                     $info = getimagesizefromstring($zip->getFromIndex($i));
                     if ($info[0] !== $this->metadata['width'] || $info[1] !== $this->metadata['height']) {
                         $validator->errors()->add('file', "The file '{$name}' has an invalid size.");

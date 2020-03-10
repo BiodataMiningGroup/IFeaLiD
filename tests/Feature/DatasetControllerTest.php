@@ -55,6 +55,7 @@ class DatasetControllerTest extends TestCase
         $this->assertEquals(684, $d->height);
         $this->assertEquals(4, $d->features);
         $this->assertEquals(8, $d->precision);
+        $this->assertTrue($d->overlay);
 
         $this->assertTrue($local->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip"));
         $this->assertTrue($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
