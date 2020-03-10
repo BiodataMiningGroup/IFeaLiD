@@ -1,6 +1,6 @@
 @extends('base')
 
-@section('title', "vis4deep - {$dataset->name}")
+@section('title', "{$dataset->name} - vis4deep")
 
 @section('content')
 <div id="show-container" class="show-container">
