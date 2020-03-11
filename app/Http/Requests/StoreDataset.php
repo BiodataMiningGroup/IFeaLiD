@@ -34,7 +34,7 @@ class StoreDataset extends FormRequest
     {
         return [
             'website' => 'honeypot',
-            'homepage' => 'required|honeytime:5',
+            'homepage' => 'required|honeytime:3',
             'file' => 'required|file|mimetypes:application/zip|max:400000',
         ];
     }
