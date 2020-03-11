@@ -3,6 +3,7 @@ import {FIRE} from '../webgl/programs/colorMaps';
 export default {
     template: `
         <div class="intensity-list">
+            <span v-show="hasHoveredFeature" class="hovered-feature" v-text="hoveredFeature"></span>
             <canvas ref="canvas"></canvas>
         </div>
     `,
@@ -25,6 +26,9 @@ export default {
     computed: {
         barHeight() {
             return this.canvasSize[1] / this.dataset.features;
+        },
+        hasHoveredFeature() {
+            return this.hoveredFeature !== null;
         },
     },
     methods: {
