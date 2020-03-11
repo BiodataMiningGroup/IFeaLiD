@@ -106,8 +106,6 @@ class DatasetController extends Controller
     {
         $request->dataset->delete();
 
-        return redirect()->route('home')->with([
-            'deleted' => $request->dataset->name,
-        ]);
+        return redirect()->route('home')->with('deleted', $request->dataset->name);
     }
 }

@@ -18,6 +18,10 @@ Route::get('/', [
 
 Route::post('/api/datasets', 'DatasetController@store');
 
+Route::delete('/api/datasets/{id}', [
+    'uses' => 'DatasetController@destroy',
+]);
+
 Route::get('/e/{slug}', [
     'as' => 'edit',
     'uses' => 'DatasetController@edit',

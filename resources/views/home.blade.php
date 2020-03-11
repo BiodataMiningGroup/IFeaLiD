@@ -3,6 +3,9 @@
 @section('content')
 
 <div class="home-container text-light">
+    @if ($deleted)
+        <div class="alert alert-success">Dataset "{{$deleted}}" was deleted.</div>
+    @endif
     <form class="upload-form" method="POST" action="{{ url('/api/datasets') }}" enctype="multipart/form-data">
         <h1 class="logo"><img src="{{asset('logo.svg')}}" height="50"> vis4deep</h1>
         <div class="form-group">
@@ -22,9 +25,5 @@
         <input class="btn btn-outline-light" type="submit" value="Upload dataset">
     </form>
 </div>
-
-@if ($deleted)
-<br>Deleted {{$deleted}}
-@endif
 
 @endsection
