@@ -88,7 +88,7 @@ class ZipCreator(object):
 
         if has_overlay:
             bytes_io = io.BytesIO()
-            Image.open(self.overlay).save(bytes_io, format='jpeg', quality=85)
+            Image.open(self.overlay).convert('L').save(bytes_io, format='jpeg', quality=85)
             zip_file.writestr('overlay.jpg', bytes_io.getvalue())
 
         if self.precision == 32:
