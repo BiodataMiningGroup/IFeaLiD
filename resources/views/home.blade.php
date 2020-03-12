@@ -1,5 +1,7 @@
 @extends('base')
 
+@section('title', config('app.name')." - Interactive Feature Localization in Deep neural networks")
+
 @section('content')
 
 <div class="home-container text-light">
@@ -7,7 +9,7 @@
         <div class="alert alert-success">Dataset "{{$deleted}}" was deleted.</div>
     @endif
     <form class="upload-form" method="POST" action="{{ url('/api/datasets') }}" enctype="multipart/form-data">
-        <h1 class="logo"><img src="{{asset('logo.svg')}}" height="50"> vis4deep</h1>
+        <h1 class="logo"><img class="d-inline-block align-top" src="{{asset('logo.svg')}}" height="50"> {{config('app.name')}}</h1>
         <div class="form-group">
             <label for="file">Select the dataset ZIP file to upload:</label>
             <input type="file" class="form-control-file @if($errors->any()) is-invalid @endif" id="file" name="file" accept="application/zip">

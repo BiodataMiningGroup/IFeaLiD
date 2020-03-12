@@ -1,12 +1,12 @@
 @extends('base')
 
-@section('title', "{$dataset->name} - vis4deep")
+@section('title', "{$dataset->name} - ".config('app.name'))
 
 @section('content')
 <div id="show-container" class="show-container">
     <nav class="navbar navbar-dark bg-dark">
         <a class="navbar-brand" href="{{url('')}}">
-            <img src="{{asset('logo.svg')}}" width="30" height="30" class="d-inline-block align-top" alt=""> vis4deep
+            <img src="{{asset('logo.svg')}}" width="30" height="30" class="d-inline-block align-top" alt=""> {{config('app.name')}}
         </a>
         <span class="navbar-text text-light font-weight-bold">
             {{$dataset->name}} <small>{{$dataset->width}}&times;{{$dataset->height}}&times;{{$dataset->features}} {{'@'}} {{$dataset->precision}}bit</small>

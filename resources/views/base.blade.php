@@ -4,8 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>@yield('title', 'vis4deep')</title>
-        <meta name="description" content="An interactive tool for the visualization of multivariate deep neural network activations.">
+        <title>@yield('title', config('app.name'))</title>
+        <meta name="description" content="An interactive tool for the exploration of multivariate deep neural network features.">
         <link rel="stylesheet" href="{{ asset('css/app.css') }}">
         <link rel="icon" type="image/svg" href="{{ asset('logo.svg') }}">
     </head>
