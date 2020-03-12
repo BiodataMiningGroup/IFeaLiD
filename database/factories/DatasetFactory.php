@@ -13,5 +13,6 @@ $factory->define(Dataset::class, function (Faker $faker) {
         'features' => $faker->randomNumber,
         'precision' => $faker->randomElement([8, 16, 32]),
         'overlay' => $faker->boolean,
+        'permanent' => false,
     ];
 });

@@ -104,8 +104,9 @@ class DatasetController extends Controller
      */
     public function destroy(DestroyDataset $request)
     {
+        $name = $request->dataset->name;
         $request->dataset->delete();
 
-        return redirect()->route('home')->with('deleted', $request->dataset->name);
+        return redirect()->route('home')->with('deleted', $name);
     }
 }

@@ -34,6 +34,14 @@ class AppServiceProvider extends ServiceProvider
         Dataset::deleted(function ($dataset) {
             $dataset->deleteZip();
             $dataset->deletePublishedFiles();
+            // The dataset is soft deleted so the ID and slugs can never be reused but
+            // we don't want to permanently store the following attributes.
+            $dataset->update([
+                'name' => '',
+                'width' => 0,
+                'height' => 0,
+                'features' => 0,
+            ]);
         });
     }
 }

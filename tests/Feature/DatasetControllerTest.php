@@ -222,6 +222,14 @@ class DatasetControllerTest extends TestCase
         $this->assertTrue($disk->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
     }
 
+    public function testEditSoftDelete()
+    {
+        $d = factory(Dataset::class)->create();
+        $d->delete();
+
+        $this->get("/e/{$d->secret_slug}")->assertStatus(404);
+    }
+
     public function testShow()
     {
         Storage::fake('local');
@@ -235,6 +243,14 @@ class DatasetControllerTest extends TestCase
         $this->assertTrue($disk->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
     }
 
+    public function testShowSoftDelete()
+    {
+        $d = factory(Dataset::class)->create();
+        $d->delete();
+
+        $this->get("/s/{$d->public_slug}")->assertStatus(404);
+    }
+
     public function testDestroy()
     {
         $d = factory(Dataset::class)->create();
@@ -243,7 +259,7 @@ class DatasetControllerTest extends TestCase
             ->assertRedirect('/')
             ->assertSessionHas('deleted', $d->name);
 
-        $this->assertNull($d->fresh());
+        $this->assertNull(Dataset::find($d->id));
     }
 
     protected function getFile($name)

@@ -22,6 +22,7 @@ class DatasetTest extends TestCase
         $this->assertNotNull($d->height);
         $this->assertNotNull($d->features);
         $this->assertNotNull($d->precision);
+        $this->assertFalse($d->permanent);
     }
 
     public function testHiddenAttributes()
@@ -30,6 +31,8 @@ class DatasetTest extends TestCase
         $this->assertArrayNotHasKey('secret_slug', $array);
         $this->assertArrayNotHasKey('created_at', $array);
         $this->assertArrayNotHasKey('updated_at', $array);
+        $this->assertArrayNotHasKey('deleted_at', $array);
+        $this->assertArrayNotHasKey('permanent', $array);
     }
 
     public function testStoreZip()
@@ -91,6 +94,21 @@ class DatasetTest extends TestCase
         $d->delete();
         $this->assertFalse($local->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip"));
         $this->assertFalse($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}"));
+    }
+
+    public function testSoftDelete()
+    {
+        $d = factory(Dataset::class)->create();
+        $this->assertNull($d->deleted_at);
+        $d->delete();
+        $this->assertFalse(Dataset::exists($d->id));
+        $this->assertTrue(Dataset::withTrashed()->exists($d->id));
+        $d->refresh();
+        $this->assertNotNull($d->deleted_at);
+        $this->assertEmpty($d->name);
+        $this->assertEquals(0, $d->width);
+        $this->assertEquals(0, $d->height);
+        $this->assertEquals(0, $d->features);
     }
 
     public function testWithUrl()

@@ -7,9 +7,12 @@ use Storage;
 use ZipArchive;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Dataset extends Model
 {
+    use SoftDeletes;
+
     /**
      * Indicates if the IDs are auto-incrementing.
      *
@@ -34,6 +37,8 @@ class Dataset extends Model
         'accessed_at',
         'created_at',
         'updated_at',
+        'deleted_at',
+        'permanent',
     ];
 
     /**
@@ -48,6 +53,7 @@ class Dataset extends Model
         'features',
         'precision',
         'overlay',
+        'permanent',
     ];
 
     /**
@@ -61,6 +67,7 @@ class Dataset extends Model
         'features' => 'int',
         'precision' => 'int',
         'overlay' => 'bool',
+        'permanent' => 'bool',
     ];
 
     /**
