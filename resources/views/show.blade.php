@@ -18,7 +18,7 @@
                         <div class="input-group-prepend">
                             <span class="input-group-text">Share:</span>
                         </div>
-                        <input type="text" class="form-control text-right" readonly value="{{route('show', $dataset->public_slug)}}">
+                        <input type="text" class="form-control share-input" readonly value="{{route('show', $dataset->public_slug)}}">
                     </div>
                 </form>
                 <form class="form-inline d-inline-block align-top" method="POST" action="{{url("api/datasets/{$dataset->id}")}}" onsubmit="return confirm('Are you sure that you want to delete dataset \'{{$dataset->name}}\'?');">

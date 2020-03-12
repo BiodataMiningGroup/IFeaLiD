@@ -33,6 +33,10 @@ $purple: #9f00b7;
 
     .navbar {
         border-bottom: 1px solid $gray-900;
+
+        .share-input {
+            width: 300px;
+        }
     }
 
     .main {
