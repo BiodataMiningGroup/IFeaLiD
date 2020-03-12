@@ -101,8 +101,8 @@ class DatasetTest extends TestCase
         $d = factory(Dataset::class)->create();
         $this->assertNull($d->deleted_at);
         $d->delete();
-        $this->assertFalse(Dataset::exists($d->id));
-        $this->assertTrue(Dataset::withTrashed()->exists($d->id));
+        $this->assertFalse(Dataset::exists());
+        $this->assertTrue(Dataset::withTrashed()->exists());
         $d->refresh();
         $this->assertNotNull($d->deleted_at);
         $this->assertEmpty($d->name);
