@@ -1,0 +1,10 @@
+.git
+.env
+node_modules
+public/storage/**
+storage
+vendor
+database/*.sqlite
+
+*.phar
+*.php_cs.cache
