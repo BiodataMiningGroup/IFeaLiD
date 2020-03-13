@@ -27,7 +27,7 @@ class DatasetControllerTest extends TestCase
     public function testStoreHoneypot()
     {
         Honeypot::enable();
-        $local = Storage::fake('local');
+        $local = Storage::fake();
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
 
@@ -37,7 +37,7 @@ class DatasetControllerTest extends TestCase
 
     public function testStore()
     {
-        $local = Storage::fake('local');
+        $local = Storage::fake();
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
 
@@ -61,9 +61,23 @@ class DatasetControllerTest extends TestCase
         $this->assertTrue($public->exists("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}/0.png"));
     }
 
+    public function testStoreFailStorage()
+    {
+        Storage::shouldReceive('putFileAs')->andThrow(new \Exception);
+
+        $file = $this->getFile('dataset.zip');
+        $this->postJson("/api/datasets", [
+                'file' => $file,
+                'homepage' => 'random',
+            ])
+            ->assertStatus(500);
+
+        $this->assertEquals(0, Dataset::withTrashed()->count());
+    }
+
     public function testStore16bit()
     {
-        $local = Storage::fake('local');
+        $local = Storage::fake();
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
 
@@ -82,7 +96,7 @@ class DatasetControllerTest extends TestCase
 
     public function testStore32bit()
     {
-        $local = Storage::fake('local');
+        $local = Storage::fake();
         $public = Storage::fake('public');
         $this->assertEquals(0, Dataset::count());
 
@@ -211,7 +225,7 @@ class DatasetControllerTest extends TestCase
 
     public function testEdit()
     {
-        Storage::fake('local');
+        Storage::fake();
         $disk = Storage::fake('public');
         $file = $this->getFile('dataset.zip');
         $d = factory(Dataset::class)->create();
@@ -232,7 +246,7 @@ class DatasetControllerTest extends TestCase
 
     public function testShow()
     {
-        Storage::fake('local');
+        Storage::fake();
         $disk = Storage::fake('public');
         $file = $this->getFile('dataset.zip');
         $d = factory(Dataset::class)->create();

@@ -52,7 +52,9 @@ class DatasetController extends Controller
             // see the dataset.
             $dataset->publishZip($file);
         } catch (Exception $e) {
-            $dataset->delete();
+            // If there was a problem, don't soft delete the dataset because the ID and
+            // slugs never became public and could be used again.
+            $dataset->forceDelete();
             throw $e;
         }
 

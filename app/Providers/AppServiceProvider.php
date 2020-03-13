@@ -32,8 +32,6 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Dataset::deleted(function ($dataset) {
-            $dataset->deleteZip();
-            $dataset->deletePublishedFiles();
             // The dataset is soft deleted so the ID and slugs can never be reused but
             // we don't want to permanently store the following attributes.
             $dataset->update([
@@ -42,6 +40,11 @@ class AppServiceProvider extends ServiceProvider
                 'height' => 0,
                 'features' => 0,
             ]);
+
+            // Do this last because this might fail if there is a problem with the
+            // storage disk. The DB entry should still be cleared above.
+            $dataset->deleteZip();
+            $dataset->deletePublishedFiles();
         });
     }
 }
