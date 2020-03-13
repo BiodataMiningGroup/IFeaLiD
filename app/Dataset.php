@@ -80,7 +80,7 @@ class Dataset extends Model
     {
         $path = $this->getLocalDiskPath();
 
-        return Storage::disk('local')->putFileAs(dirname($path), $zip, basename($path));
+        return Storage::putFileAs(dirname($path), $zip, basename($path));
     }
 
     /**
@@ -88,7 +88,7 @@ class Dataset extends Model
      */
     public function deleteZip()
     {
-        return Storage::disk('local')->delete($this->getLocalDiskPath());
+        return Storage::delete($this->getLocalDiskPath());
     }
 
     /**
@@ -111,7 +111,7 @@ class Dataset extends Model
             $tmpResource = tmpfile();
 
             try {
-                $source = Storage::disk('local')->readStream($localPath);
+                $source = Storage::readStream($localPath);
                 stream_copy_to_stream($source, $tmpResource);
                 $tmpPath = stream_get_meta_data($tmpResource)['uri'];
                 $zip = new ZipArchive;

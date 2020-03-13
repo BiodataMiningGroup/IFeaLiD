@@ -37,7 +37,7 @@ class DatasetTest extends TestCase
 
     public function testStoreZip()
     {
-        $disk = Storage::fake('local');
+        $disk = Storage::fake();
         $file = UploadedFile::fake()->create('dataset.zip');
         $d = factory(Dataset::class)->create();
         $d->storeZip($file);
@@ -46,7 +46,7 @@ class DatasetTest extends TestCase
 
     public function testPublishZip()
     {
-        $local = Storage::fake('local');
+        $local = Storage::fake();
         $public = Storage::fake('public');
         $file = new UploadedFile(__DIR__.'/../files/dataset.zip', 'dataset.zip', 'application/zip', null, true);
         $d = factory(Dataset::class)->create();
@@ -68,7 +68,7 @@ class DatasetTest extends TestCase
 
     public function testDeleteZip()
     {
-        $disk = Storage::fake('local');
+        $disk = Storage::fake();
         $d = factory(Dataset::class)->create();
         $disk->put("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip", '0');
         $d->deleteZip();
@@ -86,7 +86,7 @@ class DatasetTest extends TestCase
 
     public function testDelete()
     {
-        $local = Storage::fake('local');
+        $local = Storage::fake();
         $public = Storage::fake('public');
         $d = factory(Dataset::class)->create();
         $local->put("{$d->id[0]}{$d->id[1]}/{$d->id[2]}{$d->id[3]}/{$d->id}.zip", '0');
