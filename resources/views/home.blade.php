@@ -24,7 +24,10 @@
         </div>
         {!! Honeypot::generate('website', 'homepage') !!}
         @csrf
-        <input class="btn btn-outline-light" type="submit" value="Upload dataset">
+        <button type="submit" class="btn btn-outline-light" onclick="this.disabled = true; this.firstElementChild.style = '';">
+            <span class="spinner-border spinner-border-sm align-middle mr-1" style="display: none;"></span>
+            Upload dataset
+        </button>
     </form>
 </div>
 

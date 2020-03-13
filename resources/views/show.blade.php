@@ -21,11 +21,14 @@
                         <input type="text" class="form-control share-input" readonly value="{{route('show', $dataset->public_slug)}}">
                     </div>
                 </form>
-                <form class="form-inline d-inline-block align-top" method="POST" action="{{url("api/datasets/{$dataset->id}")}}" onsubmit="return confirm('Are you sure that you want to delete dataset \'{{$dataset->name}}\'?');">
+                <form class="form-inline d-inline-block align-top" method="POST" action="{{url("api/datasets/{$dataset->id}")}}" onsubmit="return confirm('Are you sure that you want to delete dataset \'{{$dataset->name}}\'?') && (this.lastElementChild.disabled = true, this.lastElementChild.firstElementChild.style = '', true);">
                     @method('DELETE')
                     @csrf
                     <input type="hidden" name="secret" value="{{$dataset->secret_slug}}">
-                    <button class="btn btn-danger btn-sm" type="submit" title="Delete this dataset">Delete</button>
+                    <button type="submit" class="btn btn-danger btn-sm" title="Delete this dataset">
+                        <span class="spinner-border spinner-border-sm align-middle mr-1" style="display: none;"></span>
+                        Delete
+                    </button>
                 </form>
             @endif
         </span>
