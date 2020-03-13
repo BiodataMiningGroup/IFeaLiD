@@ -7,7 +7,7 @@ let MAX_DISTANCE = Math.PI / 2;
 export default class Similarity extends IntensityProgram {
     constructor(options) {
         super(vertexShaderSource, fragmentShaderSource, options);
-        this.mousePosition = [0, 0];
+        this.mousePosition = [0.5, 0.5];
         this.mousePositionPointer = null;
     }
 
