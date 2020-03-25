@@ -25,7 +25,13 @@ services:
     volumes:
       - ./storage:/var/www/storage
     ports:
-      - 80:80
+      - 8000:80
+
+  # scheduler:
+  #   image: docker.pkg.github.com/biodatamininggroup/ifealid/app
+  #   volumes_from:
+  #     - app
+  #   command: "/bin/sh -c 'trap exit TERM; while sleep 60 & wait; do php -d memory_limit=1G artisan schedule:run >> /dev/null 2>&1; done'"
 
 volumes:
   dbdata:

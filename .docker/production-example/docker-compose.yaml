@@ -1,0 +1,44 @@
+version: '2.3'
+
+services:
+
+  app:
+    image: ifealid/app-dist
+    build:
+      context: ./build
+      dockerfile: app.dockerfile
+      args:
+        TIMEZONE: ${TIMEZONE}
+    user: ${USER_ID}:${GROUP_ID}
+    restart: always
+    tmpfs:
+      - /var/www/storage/framework/views:uid=${USER_ID},gid=${GROUP_ID}
+    volumes:
+      - ./storage:/var/www/storage
+      - ./database:/db
+
+  web:
+    image: ifealid/web-dist
+    build:
+      context: ./build
+      dockerfile: web.dockerfile
+      args:
+        TIMEZONE: ${TIMEZONE}
+    restart: always
+    depends_on:
+      - app
+    volumes:
+      - type: bind
+        source: ./storage
+        target: /var/www/storage
+        read_only: true
+    ports:
+      - 80:80
+
+  scheduler:
+    image: ifealid/app-dist
+    user: ${USER_ID}:${GROUP_ID}
+    restart: always
+    volumes_from:
+      - app
+    command: "/bin/sh -c 'trap exit TERM; while sleep 60 & wait; do php -d memory_limit=1G artisan schedule:run >> /dev/null 2>&1; done'"
