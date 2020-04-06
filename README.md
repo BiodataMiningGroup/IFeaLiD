@@ -4,6 +4,44 @@ Interactive Feature Localization in Deep neural networks (IFeaLiD) is a web appl
 
 IFeaLiD is available at [ifealid.cebitec.uni-bielefeld.de](https://ifealid.cebitec.uni-bielefeld.de).
 
+## Examples
+
+### Datasets
+
+These are the examples that were presented in the [paper](#):
+
+#### Cityscapes Dataset (`bielefeld_000000_007186_leftImg8bit.png`)
+
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/XLR0nEoJYC>
+
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/mBewo8bZU5>
+
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/7GJCsnwDAY>
+
+#### COCO Dataset (`000000015746.jpg`)
+
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/8zD3GhhbLu>
+
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/dqPo2zLZUN>
+
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/qQq7sHC17Y>
+
+#### DIV2K Dataset (`0804.png`)
+
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/4fatmqKCRe>
+
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/8pSj1gRiJg>
+
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/HcjH3odgYY>
+
+#### COCO Dataset (`P0034.png`)
+
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/UdNkZg466L>
+
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/JxfLdUe2rB>
+
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/7PHgCj98hU>
+
 ## Installation
 
 [Docker](https://docs.docker.com/install/) and [Docker Compose](https://docs.docker.com/compose/install/) are recommended to run IFeaLiD.
