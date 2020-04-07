@@ -111,6 +111,6 @@ An example for a production configuration can be found in [`examples/production`
 
 ## References
 
--
+- [**Mask R-CNN for Object Detection and Segmentation**](https://github.com/matterport/Mask_RCNN)
 
 - **Zurowietz, M. (2020). IFeaLiD Example Datasets.** doi:10.5281/zenodo.3741485. <https://doi.org/10.5281/zenodo.3741485>
