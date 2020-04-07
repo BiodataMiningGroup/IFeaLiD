@@ -109,6 +109,14 @@ An example for a production configuration can be found in [`examples/production`
 3. Copy the file `build/.env.example` to `build/.env` and configure the `APP_KEY` and `APP_URL`.
 4. Run `docker-compose up -d`.
 
+## Citation
+
+Please cite our paper if it is helpful to your work:
+
+```
+TODO
+```
+
 ## References
 
 - [**Mask R-CNN for Object Detection and Segmentation**](https://github.com/matterport/Mask_RCNN)
