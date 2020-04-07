@@ -113,5 +113,4 @@ An example for a production configuration can be found in [`examples/production`
 
 -
 
-- **Zurowietz, M. (2020). IFeaLiD Example Datasets.** doi:10.5281/zenodo.3741485. <https:
-//doi.org/10.5281/zenodo.3741485>
+- **Zurowietz, M. (2020). IFeaLiD Example Datasets.** doi:10.5281/zenodo.3741485. <https://doi.org/10.5281/zenodo.3741485>
