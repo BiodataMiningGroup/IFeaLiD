@@ -121,4 +121,4 @@ TODO
 
 - [**Mask R-CNN for Object Detection and Segmentation**](https://github.com/matterport/Mask_RCNN)
 
-- **Zurowietz, M. (2020). IFeaLiD Example Datasets.** doi:10.5281/zenodo.3741485. <https://doi.org/10.5281/zenodo.3741485>
+- [**IFeaLiD Example Datasets.**](https://doi.org/10.5281/zenodo.3741485)
