@@ -42,6 +42,34 @@ These are the examples that were presented in the [paper](#):
 
 - conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/7PHgCj98hU>
 
+### Feature Extraction
+
+The code that was used to extract the feature maps from ResNet101 for the examples is provided in [`examples/feature-extraction`](examples/feature-extraction). Usage:
+
+1. Load the submodule of the Mask R-CNN repository: `git submodule update --init`
+
+2. Install the requirements: `pip3 install -r examples/feature-extraction/requirements.txt`
+
+3. Execute the script: `python3 examples/feature-extraction/resnet_feature_extraction.py <target directory> <image1> <image2> ...`
+
+By default, the script extracts feature maps at five stages of ResNet101. The feature maps conv2_x, conv3_x and conv4_x correspond to the files with suffix `C1.npz`, `C2.npz` and `C3.npz`, respectively.
+
+## Generating a Dataset
+
+The script to generate an IFeaLiD dataset ZIP file from a NumPy array can be found in [`resources/scripts`](resources/scripts). Usage:
+
+1. Install the requirements: `pip3 install -r resources/scripts/requirements.txt`
+
+2. Generate the feature map as NumPy array and store it as a file (see above)
+
+3. Execute the script: `python3 resources/scripts/dataset-zip-creator.py <file>`
+
+The script supports the following options:
+
+- `-n`, `--name`: Optional dataset name. Default is the filename of the NumPy file.
+- `-p`, `--precision`: Dataset numeric precision in bits (`8`, `16` or `32`). Default is `8`.
+- `-o`, `--overlay`: Optional path to the original input image. If supplied, the input image is displayed in IFeaLiD and can be blended with the heat map visualization.
+
 ## Installation
 
 [Docker](https://docs.docker.com/install/) and [Docker Compose](https://docs.docker.com/compose/install/) are recommended to run IFeaLiD.
@@ -74,7 +102,7 @@ Run `docker-compose build`.
 
 ### Production
 
-An example for a production configuration can be found in [`.docker/production-example`](.docker/production-example). 
+An example for a production configuration can be found in [`examples/production`](examples/production). 
 
 1. Copy the content to your server.
 2. Copy the file `.env.example` to `.env` and configure the user, group and timezone that should be used to run the application.
@@ -84,3 +112,6 @@ An example for a production configuration can be found in [`.docker/production-e
 ## References
 
 -
+
+- **Zurowietz, M. (2020). IFeaLiD Example Datasets.** doi:10.5281/zenodo.3741485. <https:
+//doi.org/10.5281/zenodo.3741485>

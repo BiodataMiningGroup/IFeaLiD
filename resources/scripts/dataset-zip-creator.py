@@ -102,8 +102,8 @@ class ZipCreator(object):
         zip_file.close()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Create an RTMFE ZIP from an NPZ file")
-    parser.add_argument('file', type=str, help='path to the npz file')
+    parser = argparse.ArgumentParser(description="Create an IFeaLiD ZIP from an NPZ or NPY file")
+    parser.add_argument('file', type=str, help='path to the npz/npy file')
     parser.add_argument("-n", "--name", dest='name', type=str, default='', help="optional dataset name")
     parser.add_argument('-p', '--precision', dest='precision', choices=[8, 16, 32], default=8, type=int, help='bit precision to store the dataset in (default: 8)')
     parser.add_argument('-o', '--overlay', type=str, help='optional path to the overlay image')
