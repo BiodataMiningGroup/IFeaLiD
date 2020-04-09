@@ -34,7 +34,7 @@ These are the examples that were presented in the [paper](#):
 
 - conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/HcjH3odgYY>
 
-#### COCO Dataset (`P0034.png`)
+#### DOTA Dataset (`P0034.png`)
 
 - conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/UdNkZg466L>
 
