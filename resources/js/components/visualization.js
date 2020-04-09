@@ -26,7 +26,8 @@ export default {
     template: `
         <div class="visualization" ref="map">
             <div v-if="!ready" class="loading-overlay">
-                <loading-indicator :size="120" :progress="loaded"></loading-indicator>
+                <div v-if="error" class="alert alert-primary" v-text="errorMessage"></div>
+                <loading-indicator v-else :size="120" :progress="loaded"></loading-indicator>
             </div>
             <color-scale v-show="ready" ref="colorScale"></color-scale>
         </div>
@@ -46,6 +47,7 @@ export default {
             loaded: 0,
             ready: false,
             initialAlphaScaling: 0.1,
+            error: null,
         };
     },
     computed: {
@@ -54,6 +56,13 @@ export default {
         },
         hasOverlay() {
             return this.dataset.overlay;
+        },
+        errorMessage() {
+            if (this.error) {
+                return this.error.message ? this.error.message : this.error;
+            }
+
+            return '';
         },
     },
     methods: {
@@ -286,31 +295,31 @@ export default {
             const alphaScaling = 1 - event.target.get('opacity');
             this.colorMapProgram.setAlphaScaling(alphaScaling);
             this.renderSimilarity();
-        }
-    },
-    watch: {
-        //
-    },
-    created() {
-        //
+        },
     },
     mounted() {
-        let canvas = this.initializeCanvas();
-        this.initializeOpenLayers(canvas);
-        this.initializeWebgl(canvas);
-        this.initializePrograms();
-        this.fetchImages()
-            .then(this.renderSimilarity)
-            .then(this.setReady)
-            .then(() => {
-                if (this.overlayLayer) {
-                    this.overlayLayer.setVisible(true);
-                }
-                this.map.on('pointermove', this.updateMousePosition);
-                this.map.on('click', this.updateMarkerPosition);
-            })
-            .catch(function (error) {
-                console.error(error);
-            });
+        try {
+            let canvas = this.initializeCanvas();
+            this.initializeOpenLayers(canvas);
+            this.initializeWebgl(canvas);
+            this.initializePrograms();
+
+            this.fetchImages()
+                .then(this.renderSimilarity)
+                .then(this.setReady)
+                .then(() => {
+                    if (this.overlayLayer) {
+                        this.overlayLayer.setVisible(true);
+                    }
+                    this.map.on('pointermove', this.updateMousePosition);
+                    this.map.on('click', this.updateMarkerPosition);
+                })
+                .catch((e) => {
+                    this.error = new Error(`The dataset could not be loaded. ${e.message}`);
+                });
+        } catch (e) {
+            this.error = new Error(`The dataset could not be loaded. ${e.message}`);
+        }
+
     },
 };

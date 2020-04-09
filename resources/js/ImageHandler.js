@@ -27,7 +27,9 @@ export default class ImageHandler {
             image.addEventListener('load', function () {
                 resolve(image);
             });
-            image.addEventListener('error', reject);
+            image.addEventListener('error', function () {
+                reject(new Error(`Failed to load dataset part ${index}.png.`));
+            });
         });
         image.src = `${this.dataset.url}/${index}.png`;
 

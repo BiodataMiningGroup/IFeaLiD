@@ -6,7 +6,12 @@ let numberToFloatString = function (number) {
     return ((number % 1) === 0) ? `${number}.0` : `${number}`;
 };
 
-class WebglError extends Error {}
+class WebglError extends Error {
+    constructor(message, fileName, lineNumber) {
+        message = `WebGL error: ${message}`;
+        super(message, fileName, lineNumber);
+    }
+}
 
 export default class Handler {
     constructor(options) {
@@ -69,7 +74,7 @@ export default class Handler {
             throw new WebglError('Your browser does not support the WebGL 2 color buffer float extension.');
         }
 
-        canvas.addEventListener('webglcontextlost', this.handleContextLost);
+        canvas.addEventListener('webglcontextlost', this.handleContextLost_);
 
         return gl;
     }
