@@ -20,7 +20,8 @@ class PruneDatasets implements ShouldQueue
      */
     public function handle()
     {
-        Dataset::where('updated_at', '<', Carbon::now()->subWeeks(4))
+        $age = intval(config('app.dataset_prune_age'));
+        Dataset::where('updated_at', '<', Carbon::now()->subWeeks($age))
             ->where('permanent', '=', false)
             ->delete();
     }

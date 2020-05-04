@@ -228,4 +228,9 @@ return [
 
     ],
 
+    /*
+    | Age in weeks after unvisited datasets should be pruned.
+    */
+   'dataset_prune_age' => env('APP_DATASET_PRUNE_AGE', 4),
+
 ];
