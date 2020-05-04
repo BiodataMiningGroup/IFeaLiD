@@ -20,6 +20,12 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
 
+    - name: Copy env file
+      run: composer run-script post-root-package-install
+
+    - name: Generate application key
+      run: composer run-script post-create-project-cmd
+
     # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
     # Docs: https://getcomposer.org/doc/articles/scripts.md
 
