@@ -1,5 +1,7 @@
 # IFeaLiD
 
+![Test](https://github.com/BiodataMiningGroup/IFeaLiD/workflows/Test/badge.svg)
+
 Interactive Feature Localization in Deep neural networks (IFeaLiD) is a web application that allows you to visualize and explore deep neural network layers or any hyperspectral image interactively in the browser. Read [the paper](#).
 
 IFeaLiD is available at [ifealid.cebitec.uni-bielefeld.de](https://ifealid.cebitec.uni-bielefeld.de).
