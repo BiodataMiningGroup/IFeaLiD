@@ -3,6 +3,7 @@ import ImageLayer from 'ol/layer/Image';
 import VectorLayer from 'ol/layer/Vector';
 import CanvasSource from '../ol/source/Canvas';
 import OpacitySlider from '../ol/control/OpacitySlider';
+import ColorButton from '../ol/control/ColorButton';
 import ImageSource from 'ol/source/ImageStatic';
 import VectorSource from 'ol/source/Vector';
 import Projection from 'ol/proj/Projection';
@@ -48,6 +49,7 @@ export default {
             ready: false,
             initialAlphaScaling: 0.1,
             error: null,
+            overlayGrayscale: true,
         };
     },
     computed: {
@@ -165,6 +167,15 @@ export default {
                 slider.on('change:opacity', this.updateAlphaScaling);
                 this.map.addControl(slider);
 
+                let button = new ColorButton();
+                button.on('showcolor', () => {
+                    this.overlayGrayscale = false;
+                });
+                button.on('showgrayscale', () => {
+                    this.overlayGrayscale = true;
+                });
+                this.map.addControl(button);
+
                 this.overlayLayer = new ImageLayer({
                     source: new ImageSource({
                         url: `${this.dataset.url}/overlay.jpg`,
@@ -175,9 +186,11 @@ export default {
                     visible: false,
                 });
 
-                this.overlayLayer.on('prerender', function (event) {
+                this.overlayLayer.on('prerender', (event) => {
                     event.context.imageSmoothingEnabled = false;
-                    event.context.filter = 'grayscale(100%)';
+                    if (this.overlayGrayscale) {
+                        event.context.filter = 'grayscale(100%)';
+                    }
                 });
 
                 this.overlayLayer.on('postrender', function (event) {
@@ -295,6 +308,11 @@ export default {
             const alphaScaling = 1 - event.target.get('opacity');
             this.colorMapProgram.setAlphaScaling(alphaScaling);
             this.renderSimilarity();
+        },
+    },
+    watch: {
+        overlayGrayscale() {
+            this.map.render();
         },
     },
     mounted() {

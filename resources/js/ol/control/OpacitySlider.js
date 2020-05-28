@@ -1,5 +1,5 @@
-import {listen, unlistenByKey} from 'ol/events.js';
-import PointerEventType from 'ol/pointer/EventType.js';
+import {listen, unlistenByKey} from 'ol/events';
+import PointerEventType from 'ol/pointer/EventType';
 import {ObjectEvent} from 'ol/Object';
 import ZoomSlider from 'ol/control/ZoomSlider';
 
@@ -27,6 +27,7 @@ export default class OpacitySlider extends ZoomSlider {
         super(opt_options);
         const opacity = options.opacity === undefined ? 1 : options.opacity;
         this.setProperties({opacity}, true);
+        this.element.title = 'Adjust heatmap opacity';
     }
 
     handleContainerClick_(event) {
