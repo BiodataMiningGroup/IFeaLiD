@@ -7,7 +7,7 @@ from zipfile import ZipFile
 import io
 
 class ZipCreator(object):
-    def __init__(self, file, name='', precision=8, overlay=''):
+    def __init__(self, file, name='', precision=8, overlay=None):
         self.file = os.path.abspath(file)
         self.out_file = '{}.{}.zip'.format(self.file, precision)
         self.name = os.path.basename(file) if name == '' else name
@@ -75,7 +75,7 @@ class ZipCreator(object):
             raise ValueError('The input data has an unexpected number of dimensions ({} given, 3 expected).'.format(data.ndim))
 
         zip_file = ZipFile(self.out_file, 'w')
-        has_overlay = self.overlay != ''
+        has_overlay = self.overlay != None
 
         metadata = {
             'name': self.name,
