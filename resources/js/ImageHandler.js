@@ -89,6 +89,8 @@ export default class ImageHandler {
 
         let imagesPerTile = this.dataset.precision / 8;
         let tileCount = Math.ceil(this.dataset.features / 4);
+        let lastTileIndex = tileCount - 1;
+        let latsTileImages = imageCount % imagesPerTile;
         let tilesLoaded = 0;
         let tilesCache = {};
         let tilePromises = [];
@@ -102,7 +104,11 @@ export default class ImageHandler {
 
         let gatherTile = (index, part, data) => {
             if (!tilesCache[index]) {
-                tilesCache[index] = Array(imagesPerTile).fill(undefined);
+                if (index === lastTileIndex) {
+                    tilesCache[index] = Array(latsTileImages).fill(undefined);
+                } else {
+                    tilesCache[index] = Array(imagesPerTile).fill(undefined);
+                }
             }
 
             tilesCache[index][part] = data;
