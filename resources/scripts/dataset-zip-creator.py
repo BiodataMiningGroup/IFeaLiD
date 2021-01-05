@@ -68,8 +68,11 @@ class ZipCreator(object):
             zip_file.writestr(filename, bytes_io.getvalue())
 
     def create(self):
-        with np.load(self.file) as npz_file:
-            data = npz_file[npz_file.files[0]]
+        if self.file.endswith('.npy'):
+            data = np.load(self.file)
+        else:
+            with np.load(self.file) as npz_file:
+                data = npz_file[npz_file.files[0]]
 
         if data.ndim != 3:
             raise ValueError('The input data has an unexpected number of dimensions ({} given, 3 expected).'.format(data.ndim))
