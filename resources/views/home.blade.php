@@ -11,7 +11,7 @@
                 <div class="alert alert-success">Dataset "{{$deleted}}" was deleted.</div>
             @endif
             <h1 class="logo text-center"><img class="d-inline-block align-top" src="{{asset('logo.svg')}}" height="50"> {{config('app.name')}}</h1>
-            <form class="upload-form card bg-dark border-secondary mt-3" method="POST" action="{{ url('/api/datasets') }}" enctype="multipart/form-data">
+            <form class="upload-form card bg-dark border-secondary mt-3" method="POST" action="{{ url('/api/datasets') }}" enctype="multipart/form-data" onsubmit="this.elements['smbtn'].disabled = true;">
                 <div class="card-body">
                     <div class="form-group">
                         <label for="file">Select the dataset ZIP file to upload:</label>
@@ -27,7 +27,7 @@
                     </div>
                     {!! Honeypot::generate('website', 'homepage') !!}
                     @csrf
-                    <button type="submit" class="btn btn-block btn-outline-light mt-2" onclick="this.disabled = true; this.firstElementChild.style = '';">
+                    <button id="smbtn" type="submit" class="btn btn-block btn-outline-light mt-2" onclick="this.firstElementChild.style = '';">
                         <span class="spinner-border spinner-border-sm align-middle mr-1" style="display: none;"></span>
                         Upload dataset
                     </button>
