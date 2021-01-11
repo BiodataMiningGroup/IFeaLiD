@@ -108,7 +108,7 @@ An example for a production configuration can be found in [`examples/production`
 
 1. Copy the content to your server.
 2. Copy the file `.env.example` to `.env` and configure the user, group and timezone that should be used to run the application.
-3. Copy the file `build/.env.example` to `build/.env` and configure the `APP_KEY` and `APP_URL`.
+3. Copy the file `build/.env.example` to `build/.env` and configure the `APP_KEY` and `APP_URL`. Generate an `APP_KEY` with: `head -c 32 /dev/urandom | base64`. Then set `APP_KEY=base64:<your_key>`.
 4. Run `docker-compose up -d`.
 
 ## Citation
