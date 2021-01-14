@@ -88,7 +88,7 @@ The script supports the following options:
         --prefer-source ifealid
     ```
 3. Switch to the `ifealid` directory.
-4. Run `php artisan serve`.
+4. Run `php artisan serve --host localhost`.
 
 The application is now running at `http://localhost:8000`.
 
