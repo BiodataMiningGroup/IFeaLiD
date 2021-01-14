@@ -81,14 +81,14 @@ The script supports the following options:
 1. Install [Composer](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-macos).
 2. Run:
     ```
-    composer create-project ifealid/ifealid \
+    composer create-project ifealid/ifealid:dev-master \
         --repository='{"type":"vcs","url":"git@github.com:BiodataMiningGroup/IFeaLiD.git"}' \
         --keep-vcs \
         --ignore-platform-reqs \
         --prefer-source ifealid
     ```
 3. Switch to the `ifealid` directory.
-4. Run `docker-compose up`.
+4. Run `php artisan serve`.
 
 The application is now running at `http://localhost:8000`.
 
