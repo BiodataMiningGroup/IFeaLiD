@@ -28,12 +28,18 @@ services:
     depends_on:
       - app
     volumes:
+      volumes:
+      - type: bind
+        source: ./certificate
+        target: /etc/letsencrypt/live/example.com
+        read_only: true
       - type: bind
         source: ./storage
         target: /var/www/storage
         read_only: true
     ports:
       - 80:80
+      - 443:443
 
   scheduler:
     image: ifealid/app-dist
