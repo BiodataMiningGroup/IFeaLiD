@@ -30,5 +30,11 @@ class PruneDatasetsTest extends TestCase
         $this->assertFalse(Dataset::whereId($old->id)->exists());
         $this->assertTrue(Dataset::whereId($oldPermanent->id)->exists());
         $this->assertTrue(Dataset::whereId($new->id)->exists());
+
+        $old->refresh();
+        $this->assertEquals('', $old->name);
+        $this->assertEquals(0, $old->width);
+        $this->assertEquals(0, $old->height);
+        $this->assertEquals(0, $old->features);
     }
 }

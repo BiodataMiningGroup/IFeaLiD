@@ -23,6 +23,9 @@ class PruneDatasets implements ShouldQueue
         $age = intval(config('app.dataset_prune_age'));
         Dataset::where('updated_at', '<', Carbon::now()->subWeeks($age))
             ->where('permanent', '=', false)
-            ->delete();
+            ->eachById(function ($d) {
+                // Do this individually so the deleted event is handled properly.
+                $d->delete();
+            });
     }
 }
