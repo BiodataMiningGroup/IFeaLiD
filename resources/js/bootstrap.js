@@ -1,4 +1,4 @@
-window.Vue = require('vue');
+window.Vue = require('vue').default;
 window.Vue.use(require('vue-resource'));
 
 /**
