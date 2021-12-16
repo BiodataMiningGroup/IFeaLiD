@@ -9,9 +9,8 @@ import mrcnn.config
 import mrcnn.utils
 import utils
 
-import keras.layers as KL
-import keras.models as KM
-import keras.engine as KE
+import tensorflow.keras.layers as KL
+import tensorflow.keras.models as KM
 
 class ResNet(MaskRCNN):
    def build(self, mode, config):
