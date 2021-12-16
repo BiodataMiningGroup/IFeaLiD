@@ -1,4 +1,4 @@
-FROM php:7.3-fpm-alpine
+FROM php:7.4-fpm-alpine
 MAINTAINER Martin Zurowietz <martin@cebitec.uni-bielefeld.de>
 
 RUN apk add --no-cache \
