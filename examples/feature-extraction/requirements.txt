@@ -8,4 +8,4 @@ Pillow==9.0.*
 imageio==2.10.*
 scikit-image==0.16.*
 scipy==1.1.*
-tensorflow==2.5.3
+tensorflow==2.6.4
