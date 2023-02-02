@@ -1,7 +1,5 @@
 # IFeaLiD
 
-![Test](https://github.com/BiodataMiningGroup/IFeaLiD/workflows/Test/badge.svg)
-
 Interactive Feature Localization in Deep neural networks (IFeaLiD) is a web application that allows you to visualize and explore deep neural network layers or any hyperspectral image interactively in the browser. Read [the paper](https://www.frontiersin.org/articles/10.3389/frai.2020.00049).
 
 IFeaLiD is available at [ifealid.cebitec.uni-bielefeld.de](https://ifealid.cebitec.uni-bielefeld.de).
@@ -74,43 +72,19 @@ The script supports the following options:
 
 ## Installation
 
-[Docker](https://docs.docker.com/install/) and [Docker Compose](https://docs.docker.com/compose/install/) are recommended to run IFeaLiD.
+Clone this repository.
 
 ### Developing
 
-1. Install [Composer](https://getcomposer.org/doc/00-intro.md#installation-linux-unix-macos).
-2. Run:
-    ```
-    composer create-project ifealid/ifealid:dev-master \
-        --repository='{"type":"vcs","url":"git@github.com:BiodataMiningGroup/IFeaLiD.git"}' \
-        --keep-vcs \
-        --ignore-platform-reqs \
-        --prefer-source ifealid
-    ```
-3. Switch to the `ifealid` directory.
-4. Run `php artisan serve --host localhost`.
-
-The application is now running at `http://localhost:8000`.
-
-**To develop the JavaScript files:**
-
-1. Run `npm install`.
-2. Run `npm run watch` during development.
-3. Run `npm run prod` to compile the files for production.
-
-**To build the Docker images:**
-
-Run `docker-compose build`.
+1. Run `npm install`
+2. Run `npm run dev`
+3. Open the URL shown in the terminal
 
 ### Production
 
-An example for a production configuration can be found in [`examples/production`](examples/production). 
-
-1. Copy the content to your server.
-2. Copy the file `.env.example` to `.env` and configure the user, group and timezone that should be used to run the application.
-3. Copy the file `build/.env.example` to `build/.env` and configure the `APP_KEY` and `APP_URL`. Generate an `APP_KEY` with: `head -c 32 /dev/urandom | base64`. Then set `APP_KEY=base64:<your_key>`.
-4. Add the SSL certificate files `fullchain.pem` ([server certificate](http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate)) and `privkey.pem` ([private key](http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate_key)) to the `certificate` directory.
-5. Run `docker-compose up -d`.
+1. Run `npm install`
+2. Run `npm run build`
+3. Expose the contents of the `dist` directory to a web server.
 
 ## Citation
 
