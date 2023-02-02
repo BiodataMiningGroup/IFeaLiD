@@ -100,11 +100,12 @@ export default {
         selectFile() {
             this.$refs.fileInput.click();
         },
-        async selectedFile(e) {
+        selectedFile(e) {
             this.$refs.initModal.hide();
-
-            let selectedFile = e.target.files[0];
-            let reader = new ZipReader(new BlobReader(selectedFile));
+            this.loadDataset(e.target.files[0]);
+        },
+        async loadDataset(blobOrFile) {
+            let reader = new ZipReader(new BlobReader(blobOrFile));
             let entries = await reader.getEntries();
             let entryMap = {};
             entries.forEach(e => entryMap[e.filename] = e);
@@ -123,7 +124,14 @@ export default {
         },
     },
     mounted() {
-        this.$refs.initModal.show();
+        let dataset = new URLSearchParams(window.location.search).get('d');
+        if (dataset) {
+            fetch(`datasets/${dataset}`)
+                .then(response => response.blob())
+                .then(this.loadDataset)
+        } else {
+            this.$refs.initModal.show();
+        }
     },
 }
 </script>

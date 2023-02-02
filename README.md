@@ -12,35 +12,35 @@ These are the examples that were presented in the [paper](https://www.frontiersi
 
 #### Cityscapes Dataset (`bielefeld_000000_007186_leftImg8bit.png`)
 
-- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/XLR0nEoJYC>
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=bielefeld_000000_007186_leftImg8bit.png.C1.npz.8.zip>
 
-- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/mBewo8bZU5>
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=bielefeld_000000_007186_leftImg8bit.png.C2.npz.8.zip>
 
-- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/7GJCsnwDAY>
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=bielefeld_000000_007186_leftImg8bit.png.C3.npz.8.zip>
 
 #### COCO Dataset (`000000015746.jpg`)
 
-- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/8zD3GhhbLu>
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=000000015746.jpg.C1.npz.8.zip>
 
-- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/dqPo2zLZUN>
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=000000015746.jpg.C2.npz.8.zip>
 
-- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/qQq7sHC17Y>
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=000000015746.jpg.C3.npz.8.zip>
 
 #### DIV2K Dataset (`0804.png`)
 
-- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/4fatmqKCRe>
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=0804.png.C1.npz.8.zip>
 
-- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/8pSj1gRiJg>
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=0804.png.C2.npz.8.zip>
 
-- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/HcjH3odgYY>
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=0804.png.C3.npz.8.zip>
 
 #### DOTA Dataset (`P0034.png`)
 
-- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/s/UdNkZg466L>
+- conv2_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=P0034.png.C1.npz.8.zip>
 
-- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/s/JxfLdUe2rB>
+- conv3_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=P0034.png.C2.npz.8.zip>
 
-- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/s/7PHgCj98hU>
+- conv4_x: <https://ifealid.cebitec.uni-bielefeld.de/?d=P0034.png.C3.npz.8.zip>
 
 ### Feature Extraction
 
@@ -83,7 +83,7 @@ Clone this repository.
 ### Production
 
 1. Run `npm install`
-2. Update `base` in `vite.config.js`. If you are deploying to https://example.com/<DIR>/, then set base to '/<DIR>/'. If you are not deploying to a subdirectory, then set base to `'/'`.
+2. Update `base` in `vite.config.js`. If you are deploying to `https://example.com/<DIR>/`, then set base to `'/<DIR>/'`. If you are not deploying to a subdirectory, then set base to `'/'`.
 3. Run `npm run build`
 4. Expose the contents of the `dist` directory to a web server.
 
