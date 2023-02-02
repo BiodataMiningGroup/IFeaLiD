@@ -211,13 +211,13 @@ export default {
         },
     },
     mounted() {
+        this.$refs.initModal.show();
         let dataset = new URLSearchParams(window.location.search).get('d');
         if (dataset) {
+            this.loading = true;
             fetch(`datasets/${dataset}`)
                 .then(response => response.blob())
                 .then(this.loadDataset)
-        } else {
-            this.$refs.initModal.show();
         }
     },
 }
