@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vue/compat": "^3.2.47",
     "@zip.js/zip.js": "^2.6.62",
     "bootstrap": "^4.6.2",
+    "bootstrap-vue": "^2.23.1",
     "ol": "^6.15.1",
     "vite-raw-plugin": "^1.0.1",
     "vue": "^3.2.45"
