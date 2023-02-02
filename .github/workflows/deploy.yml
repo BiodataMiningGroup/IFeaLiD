@@ -34,7 +34,7 @@ jobs:
           npm install
           npm run build
           echo > dist/.nojekyll
-#          echo 'ifealid.cebitec.uni-bielefeld.de' > dist/CNAME
+          echo 'ifealid.cebitec.uni-bielefeld.de' > dist/CNAME
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
