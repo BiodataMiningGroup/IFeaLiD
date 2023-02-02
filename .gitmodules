@@ -1,3 +1,0 @@
-[submodule "examples/feature-extraction/Mask_RCNN"]
-	path = examples/feature-extraction/Mask_RCNN
-	url = git@github.com:mzur/Mask_RCNN.git

@@ -1,0 +1,26 @@
+@import 'bootstrap';
+@import 'bootstrap-vue';
+@import '../node_modules/ol/ol';
+
+:root {
+  --ifealid-orange: #fc6600;
+  --ifealid-yellow: #ffd700;
+  --ifealid-purple: #9f00b7;
+}
+
+.ol-control.active button,
+.ol-control.active button {
+  text-decoration: none;
+  background-color: rgba(0,60,136,0.7);
+}
+
+.ol-grayscale-button {
+  top: calc(5em + 200px);
+  left: .5em;
+}
+
+.ol-zoomslider {
+  top: 4.5em;
+  left: .5em;
+  height: 200px;
+}

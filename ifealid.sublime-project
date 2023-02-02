@@ -1,0 +1,17 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"index_exclude_patterns":
+		[
+			"storage/**",
+			"public/**",
+			"vendor/**"
+		]
+	}
+}
