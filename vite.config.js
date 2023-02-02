@@ -4,6 +4,7 @@ import rawLoader from 'vite-raw-plugin'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/IFeaLiD/',
   resolve: {
     alias: {
       vue: '@vue/compat'
