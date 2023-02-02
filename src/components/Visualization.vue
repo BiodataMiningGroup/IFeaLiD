@@ -1,7 +1,7 @@
 <template>
 <div class="visualization" ref="map">
     <div v-if="!ready" class="loading-overlay">
-        <div v-if="error" class="alert alert-primary" v-text="errorMessage"></div>
+        <div v-if="error" class="alert alert-danger" v-text="errorMessage"></div>
         <LoadingIndicator v-else :size="120" :progress="loaded"></LoadingIndicator>
     </div>
     <ColorScale v-show="ready" ref="colorScale"></ColorScale>

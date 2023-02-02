@@ -38,8 +38,12 @@
             <p class="mb-0">
                 Select a dataset ZIP file to start the application.
             </p>
+            <div v-if="error" class="alert alert-danger mt-4 mb-0" v-text="errorMessage"></div>
             <template #modal-footer>
-                <button class="btn btn-primary btn-lg" @click="selectFile">
+                <div v-if="loading" class="spinner-border text-light" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <button v-else class="btn btn-primary btn-lg" @click="selectFile">
                     Select ZIP file
                 </button>
             </template>
@@ -71,6 +75,23 @@ import PixelVectorDisplay from './components/PixelVectorDisplay.vue';
 import {ZipReader, BlobReader, TextWriter} from "@zip.js/zip.js";
 import { BModal } from 'bootstrap-vue';
 
+const DATASET_KEYS = [
+    'precision',
+    'name',
+    'height',
+    'width',
+    'features',
+];
+
+const NUMERIC_FIELDS = [
+    'precision',
+    'height',
+    'width',
+    'features',
+];
+
+const PRECISION_STEPS = [32, 16, 8];
+
 export default {
     components: {
         Visualization,
@@ -81,7 +102,18 @@ export default {
         return {
             dataset: {},
             initialized: false,
+            loading: false,
+            error: null,
         };
+    },
+    computed: {
+        errorMessage() {
+            if (this.error) {
+                return this.error.message ? this.error.message : this.error;
+            }
+
+            return '';
+        },
     },
     methods: {
         updateHoverPixelVector(vector) {
@@ -101,26 +133,81 @@ export default {
             this.$refs.fileInput.click();
         },
         selectedFile(e) {
-            this.$refs.initModal.hide();
+            this.loading = true;
             this.loadDataset(e.target.files[0]);
         },
-        async loadDataset(blobOrFile) {
-            let reader = new ZipReader(new BlobReader(blobOrFile));
-            let entries = await reader.getEntries();
-            let entryMap = {};
-            entries.forEach(e => entryMap[e.filename] = e);
-            let metaEntry = entryMap['metadata.json'];
-            delete entryMap['metadata.json'];
-            let meta = await metaEntry.getData(new TextWriter());
-            this.dataset = JSON.parse(meta);
+        verifyDataset(dataset) {
+            DATASET_KEYS.forEach(function (key) {
+                if (dataset[key] === undefined) {
+                    throw Error(`The metadata.json is missing the ${key} field.`);
+                }
+            });
 
-            if (this.dataset.overlay && entryMap['overlay.jpg']) {
-                this.dataset.overlayEntry = entryMap['overlay.jpg'];
-                delete entryMap['overlay.jpg'];
+            NUMERIC_FIELDS.forEach(function (key) {
+                if (!Number.isInteger(dataset[key])) {
+                    throw Error(`The the ${key} field is not an integer.`);
+                }
+
+                if (dataset[key] <= 0) {
+                    throw Error(`The the ${key} field must be greater than 0.`);
+                }
+            });
+
+            if (!PRECISION_STEPS.includes(dataset.precision)) {
+                throw Error(`The the precision must be 32, 16 or 8.`);
             }
 
-            this.dataset.entries = entryMap;
-            this.initialized = true;
+            let fileMultiplier = dataset.precision / 32;
+            let expectedFiles = dataset.features * fileMultiplier;
+            let foundFiles = Object.keys(dataset.entries).length;
+            if (foundFiles !== expectedFiles) {
+                throw new Error(`Wrong number of feature files. Found ${foundFiles} but expected ${expectedFiles}.`);
+            }
+
+            if (dataset.overlay && !dataset.overlayEntry) {
+                throw new Error('The overlay.jog file is missing.');
+            }
+
+            for (let i = expectedFiles - 1; i >= 0; i--) {
+                if (!dataset.entries[`${i}.png`]) {
+                    throw new Error(`The feature file ${i}.png is missing.`);
+                }
+            }
+        },
+        async loadDataset(blobOrFile) {
+            try {
+                let reader = new ZipReader(new BlobReader(blobOrFile));
+                let entries = await reader.getEntries();
+                let entryMap = {};
+                entries.forEach(e => entryMap[e.filename] = e);
+                let metaEntry = entryMap['metadata.json'];
+
+                if (!metaEntry) {
+                    throw new Error('The metadata.json file is missing.');
+                }
+
+                delete entryMap['metadata.json'];
+                let meta = await metaEntry.getData(new TextWriter());
+                let dataset = JSON.parse(meta);
+
+                if (dataset.overlay && entryMap['overlay.jpg']) {
+                    dataset.overlayEntry = entryMap['overlay.jpg'];
+                    delete entryMap['overlay.jpg'];
+                }
+
+                dataset.entries = entryMap;
+                this.verifyDataset(dataset);
+
+                this.dataset = dataset;
+                this.initialized = true;
+            } catch (e) {
+                this.error = e;
+                return;
+            } finally {
+                this.loading = false;
+            }
+
+            this.$refs.initModal.hide();
         },
     },
     mounted() {

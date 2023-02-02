@@ -36,10 +36,6 @@ export default {
             return this.describeArc(this.centerX, this.centerY, radius, 0, endAngle);
         },
         progressText() {
-            if (this.progress === 0) {
-                return 'preparing...';
-            }
-
             return `${Math.round(this.progress * 100)} %`;
         },
     },
