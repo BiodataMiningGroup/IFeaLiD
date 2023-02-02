@@ -11,19 +11,19 @@
     </nav>
     <div class="main">
         <div class="main-content">
-            <visualization
+            <Visualization
                 ref="visualization"
                 v-bind:dataset="dataset"
                 v-on:hover="updateHoverPixelVector"
                 v-on:select="updateSelectPixelVector"
-            ></visualization>
+            ></Visualization>
         </div>
         <div class="main-aside">
-            <pixel-vector-display
+            <PixelVectorDisplay
                 ref="pixelVectorDisplay"
                 v-bind:dataset="dataset"
                 v-on:hover="updateHoveredFeature"
-            ></pixel-vector-display>
+            ></PixelVectorDisplay>
         </div>
     </div>
     <input type="file" name="file" accept="application/zip" ref="fileInput" @change="selectFile">

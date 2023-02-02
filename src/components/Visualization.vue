@@ -2,9 +2,9 @@
 <div class="visualization" ref="map">
     <div v-if="!ready" class="loading-overlay">
         <div v-if="error" class="alert alert-primary" v-text="errorMessage"></div>
-        <loading-indicator v-else :size="120" :progress="loaded"></loading-indicator>
+        <LoadingIndicator v-else :size="120" :progress="loaded"></LoadingIndicator>
     </div>
-    <color-scale v-show="ready" ref="colorScale"></color-scale>
+    <ColorScale v-show="ready" ref="colorScale"></ColorScale>
 </div>
 </template>
 
