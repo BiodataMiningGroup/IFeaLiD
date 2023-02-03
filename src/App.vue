@@ -158,7 +158,7 @@ export default {
             }
 
             let fileMultiplier = dataset.precision / 32;
-            let expectedFiles = dataset.features * fileMultiplier;
+            let expectedFiles = Math.ceil(dataset.features * fileMultiplier);
             let foundFiles = Object.keys(dataset.entries).length;
             if (foundFiles !== expectedFiles) {
                 throw new Error(`Wrong number of feature files. Found ${foundFiles} but expected ${expectedFiles}.`);
